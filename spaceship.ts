@@ -187,7 +187,9 @@ function startGame() {
                 y: PLAYER_POS,
                 type: my_missle,
             });
-            return shots;
+            return shots.filter((shot)=> {
+                return isVisible(shot);
+            });
         }, []);
 
     /** stream fo Aliens*/

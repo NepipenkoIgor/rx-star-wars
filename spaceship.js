@@ -153,7 +153,9 @@ function startGame() {
             y: PLAYER_POS,
             type: my_missle
         });
-        return shots;
+        return shots.filter(function (shot) {
+            return isVisible(shot);
+        });
     }, []);
     /** stream fo Aliens*/
     var Enemies = Rx.Observable.timer(0, ENEMY_RESP)
