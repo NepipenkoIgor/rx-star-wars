@@ -10,6 +10,7 @@ type point={x:number,y:number,type?:any};
 /** init canvas*/
 let canvas:HTMLCanvasElement = document.createElement('canvas');
 let ctx:CanvasRenderingContext2D = canvas.getContext('2d');
+document.body.innerHTML='';
 document.body.appendChild(canvas);
 canvas.height = window.innerHeight;
 canvas.width = window.innerWidth;
@@ -217,7 +218,6 @@ let MyShots = Rx.Observable
 var Enemies = Rx.Observable.timer(0, ENEMY_RESP)
     .scan((enemies)=> {
         let index = Math.floor(Math.random() * aliens.length);
-        console.log(index)
         let alien = aliens[index];
         let enemy = {
             x: Math.random() * (canvas.width - alien.naturalWidth),

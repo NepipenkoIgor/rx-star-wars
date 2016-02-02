@@ -4,6 +4,7 @@
 /** init canvas*/
 var canvas = document.createElement('canvas');
 var ctx = canvas.getContext('2d');
+document.body.innerHTML = '';
 document.body.appendChild(canvas);
 canvas.height = window.innerHeight;
 canvas.width = window.innerWidth;
@@ -182,7 +183,6 @@ var MyShots = Rx.Observable
 var Enemies = Rx.Observable.timer(0, ENEMY_RESP)
     .scan(function (enemies) {
     var index = Math.floor(Math.random() * aliens.length);
-    console.log(index);
     var alien = aliens[index];
     var enemy = {
         x: Math.random() * (canvas.width - alien.naturalWidth),
