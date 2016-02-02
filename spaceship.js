@@ -138,7 +138,7 @@ function startGame() {
     })
         .startWith({ x: canvas.width / 2, y: PLAYER_POS, type: spaceShip });
     var MyFire = Rx.Observable
-        .fromEvent(canvas, 'click')
+        .fromEvent(canvas, 'mousedown')
         .timestamp();
     var MyShots = Rx.Observable
         .combineLatest(MySpaceShip, MyFire, function (MySpaceShip, MyFire) {
@@ -243,6 +243,8 @@ function startGame() {
         });
     }
     /**  init first value in shot's stream*/
-    canvas.click();
+    var clickEvent = document.createEvent('MouseEvents');
+    clickEvent.initEvent('mousedown', true, true);
+    canvas.dispatchEvent(clickEvent);
 }
 startGame();

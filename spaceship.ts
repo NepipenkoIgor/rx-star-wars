@@ -170,7 +170,7 @@ function startGame() {
 
 
     let MyFire = Rx.Observable
-        .fromEvent(canvas, 'click')
+        .fromEvent(canvas, 'mousedown')
         .timestamp();
 
 
@@ -284,6 +284,8 @@ function startGame() {
     }
 
     /**  init first value in shot's stream*/
-    canvas.click();
+    var clickEvent = document.createEvent('MouseEvents');
+    clickEvent.initEvent('mousedown', true, true);
+    canvas.dispatchEvent(clickEvent);
 }
 startGame()
