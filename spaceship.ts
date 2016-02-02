@@ -215,9 +215,9 @@ function startGame() {
                 enemy.shots.filter(isVisible);
             });
             enemies.push(enemy);
-
             return enemies.filter((enemy:any)=> {
-                return !(enemy.isDead || !isVisible(enemy))
+                enemy.shots = enemy.shots.filter(isVisible);
+                return !(enemy.isDead || !isVisible(enemy)) || enemy.shots.length
             });
         }, []);
 
@@ -251,6 +251,7 @@ function startGame() {
         });
 
     Game.subscribe((items)=> {
+        console.log(items.enemies.length)
         window.requestAnimationFrame(()=> {
             let {stars, mySpaceShip, myShots, enemies}=items;
             paintStars(stars);

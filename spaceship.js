@@ -180,7 +180,8 @@ function startGame() {
         });
         enemies.push(enemy);
         return enemies.filter(function (enemy) {
-            return !(enemy.isDead || !isVisible(enemy));
+            enemy.shots = enemy.shots.filter(isVisible);
+            return !(enemy.isDead || !isVisible(enemy)) || enemy.shots.length;
         });
     }, []);
     /** stream of scores*/
@@ -209,6 +210,7 @@ function startGame() {
         setTimeout(startGame, 2000);
     });
     Game.subscribe(function (items) {
+        console.log(items.enemies.length);
         window.requestAnimationFrame(function () {
             var stars = items.stars, mySpaceShip = items.mySpaceShip, myShots = items.myShots, enemies = items.enemies;
             paintStars(stars);
