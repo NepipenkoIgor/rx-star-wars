@@ -99,18 +99,21 @@ function paintStars(stars:star[]) {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.fillStyle = '#01162f';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = '#ffffff';
     stars.forEach((star:star):void=> {
-        //ctx.fillStyle = `rgba(255, 255, 255, ${star.opacity})`;
-        ctx.beginPath();
-        ctx.arc(star.x, star.y, star.size / 2, 0, 2 * Math.PI);
-        ctx.closePath();
-        ctx.fill();
+        window.requestAnimationFrame(()=> {
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            ctx.arc(star.x, star.y, star.size / 2, 0, 2 * Math.PI);
+            ctx.closePath();
+            ctx.fill();
+        })
     })
 }
 
 function drawShip(x, y) {
-    ctx.drawImage(spaceShip, x, y);
+    window.requestAnimationFrame(()=> {
+        ctx.drawImage(spaceShip, x, y);
+    })
 }
 
 
@@ -118,20 +121,26 @@ function drawEnemies(enemies) {
     enemies.forEach((enemy:any)=> {
         enemy.y += 5;
         if (!enemy.isDead) {
-            ctx.drawImage(enemy.type, enemy.x, enemy.y);
+            window.requestAnimationFrame(()=> {
+                ctx.drawImage(enemy.type, enemy.x, enemy.y);
+            })
         }
         enemy.shots.forEach((shot:any)=> {
             shot.y += SHOTING_SPEED;
-            ctx.drawImage(alien_missle, shot.x, shot.y);
+            window.requestAnimationFrame(()=> {
+                ctx.drawImage(alien_missle, shot.x, shot.y);
+            })
         })
     })
 }
 
 function drawScores(score) {
-    ctx.drawImage(alien_icon, 5, 5);
-    ctx.fillStyle = '#ffffff';
-    ctx.font = 'bold 26px sans-serif';
-    ctx.fillText(`Score: ${score}`, 40, 43)
+    window.requestAnimationFrame(()=> {
+        ctx.drawImage(alien_icon, 5, 5);
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 26px sans-serif';
+        ctx.fillText(`Score: ${score}`, 40, 43)
+    })
 }
 function getRandomArbitrary(min, max) {
     return Math.random() * (max - min) + min;
@@ -252,14 +261,14 @@ function startGame() {
         });
 
     Game.subscribe((items)=> {
-        window.requestAnimationFrame(()=> {
-            let {stars, mySpaceShip, myShots, enemies}=items;
-            paintStars(stars);
-            drawShip(mySpaceShip.x, mySpaceShip.y);
-            drawMyShots(myShots, enemies);
-            drawEnemies(enemies);
-            drawScores(currentScore)
-        })
+        // window.requestAnimationFrame(()=> {
+        let {stars, mySpaceShip, myShots, enemies}=items;
+        paintStars(stars);
+        drawShip(mySpaceShip.x, mySpaceShip.y);
+        drawMyShots(myShots, enemies);
+        drawEnemies(enemies);
+        drawScores(currentScore)
+        //})
     });
     function drawMyShots(shots, enemies) {
         ctx.fillStyle = '#B8860B';
@@ -278,7 +287,9 @@ function startGame() {
                 }
             }
             shot.y -= SHOTING_SPEED;
-            ctx.drawImage(my_missle, shot.x, shot.y);
+            window.requestAnimationFrame(()=> {
+                ctx.drawImage(my_missle, shot.x, shot.y);
+            })
         });
         shoot_indexses.forEach((index, i)=> {
             shots.splice(index - i, 1)
