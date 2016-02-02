@@ -251,7 +251,6 @@ function startGame() {
         });
 
     Game.subscribe((items)=> {
-        console.log(items.enemies.length)
         window.requestAnimationFrame(()=> {
             let {stars, mySpaceShip, myShots, enemies}=items;
             paintStars(stars);
