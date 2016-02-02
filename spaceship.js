@@ -158,6 +158,7 @@ function startGame() {
     /** stream fo Aliens*/
     var Enemies = Rx.Observable.timer(0, ENEMY_RESP)
         .scan(function (enemies) {
+        console.log('@');
         var index = Math.floor(Math.random() * aliens.length);
         var alien = aliens[index];
         var enemy = {
@@ -178,6 +179,16 @@ function startGame() {
             enemy.shots.filter(isVisible);
         });
         enemies.push(enemy);
+        var activeEnemies = enemies.filter(function (enemy) {
+            return isVisible(enemy) && enemy.shots.length && !enemy.isDead;
+        });
+        var activeLength = activeEnemies.length;
+        if (activeLength > 1) {
+            activeEnemies.unshift(activeLength);
+            activeEnemies.unshift(0);
+            enemies.length = 0;
+            Array.prototype.splice.apply(enemies, activeEnemies);
+        }
         return enemies.filter(function (enemy) {
             return !(enemy.isDead && !enemy.shots.length && !isVisible(enemy));
         });
@@ -205,7 +216,6 @@ function startGame() {
         if (!gameOver(items.mySpaceShip, items.enemies)) {
             return true;
         }
-        //ctx.clearRect(0, 0, canvas.width, canvas.height);
         setTimeout(startGame, 2000);
     });
     Game.subscribe(function (items) {

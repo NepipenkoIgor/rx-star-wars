@@ -10,7 +10,7 @@ type point={x:number,y:number,type?:any};
 /** init canvas*/
 let canvas:HTMLCanvasElement = document.createElement('canvas');
 let ctx:CanvasRenderingContext2D = canvas.getContext('2d');
-document.body.innerHTML='';
+document.body.innerHTML = '';
 document.body.appendChild(canvas);
 canvas.height = window.innerHeight;
 canvas.width = window.innerWidth;
@@ -22,8 +22,8 @@ spaceShip.src = "images/my_ship.png";
 let my_missle = new Image();
 my_missle.src = "images/my_missle.png";
 
-let alien_icon= new Image();
-alien_icon.src="images/alien_icon.png";
+let alien_icon = new Image();
+alien_icon.src = "images/alien_icon.png";
 
 let aliens = [];
 
@@ -50,7 +50,7 @@ aliens.push(alien5)
 let alien_missle = new Image();
 alien_missle.src = "images/alien_missle.png";
 
-let spaceObjects=[];
+let spaceObjects = [];
 
 let spaceObj1 = new Image();
 spaceObj1.src = "images/sun.png";
@@ -114,9 +114,6 @@ function drawShip(x, y) {
 }
 
 
-
-
-
 function drawEnemies(enemies) {
     enemies.forEach((enemy:any)=> {
         enemy.y += 5;
@@ -140,7 +137,7 @@ function getRandomArbitrary(min, max) {
     return Math.random() * (max - min) + min;
 }
 
-function startGame(){
+function startGame() {
     /** stream of stars*/
     let StarsStream = Rx.Observable.range(1, STARS_NUM)
         .map(():star => {
@@ -156,7 +153,7 @@ function startGame(){
                 .map(()=> {
                     stars.forEach((star:star)=> {
                         star.y > canvas.height ? star.y = 0 : star.y += 3;
-                        star.opacity=getRandomArbitrary(0,1)
+                        star.opacity = getRandomArbitrary(0, 1)
                     });
                     return stars
                 })
@@ -196,6 +193,7 @@ function startGame(){
     /** stream fo Aliens*/
     let Enemies = Rx.Observable.timer(0, ENEMY_RESP)
         .scan((enemies)=> {
+            console.log('@')
             let index = Math.floor(Math.random() * aliens.length);
             let alien = aliens[index];
             let enemy = {
@@ -217,6 +215,18 @@ function startGame(){
                 enemy.shots.filter(isVisible);
             });
             enemies.push(enemy);
+            let activeEnemies = enemies.filter((enemy:any)=> {
+                return isVisible(enemy) && enemy.shots.length && !enemy.isDead
+            });
+            let activeLength = activeEnemies.length;
+
+            if (activeLength > 1) {
+                activeEnemies.unshift(activeLength);
+                activeEnemies.unshift(0);
+                enemies.length = 0;
+                Array.prototype.splice.apply(enemies, activeEnemies)
+            }
+
             return enemies.filter((enemy:any)=> {
                 return !(enemy.isDead && !enemy.shots.length && !isVisible(enemy))
             });
@@ -245,15 +255,14 @@ function startGame(){
         })
         .sample(40)
         .takeWhile((items)=> {
-            if(!gameOver(items.mySpaceShip, items.enemies)){
-               return true;
+            if (!gameOver(items.mySpaceShip, items.enemies)) {
+                return true;
             }
-            //ctx.clearRect(0, 0, canvas.width, canvas.height);
-            setTimeout(startGame,2000);
+            setTimeout(startGame, 2000);
         });
 
     Game.subscribe((items)=> {
-        window.requestAnimationFrame(()=>{
+        window.requestAnimationFrame(()=> {
             let {stars, mySpaceShip, myShots, enemies}=items;
             paintStars(stars);
             drawShip(mySpaceShip.x, mySpaceShip.y);
@@ -285,6 +294,7 @@ function startGame(){
             shots.splice(index - i, 1)
         })
     }
+
     /**  init first value in shot's stream*/
     canvas.click();
 }
