@@ -2,10 +2,10 @@
  * Created by igor on 1/29/16.
  */
 
-/// <reference path="./../typings/tsd.d.ts" />
+/// <reference path="./typings/tsd.d.ts" />
 
-type star={x:number,y:number,size:number};
-type point={x:number,y:number};
+type star={x:number,y:number,size:number,opacity?:number};
+type point={x:number,y:number,type?:any};
 
 /** init canvas*/
 let canvas:HTMLCanvasElement = document.createElement('canvas');
@@ -18,15 +18,50 @@ canvas.width = window.innerWidth;
 let spaceShip = new Image();
 spaceShip.src = "images/my_ship.png";
 
-let missle = new Image();
-missle.src = "images/my_missle.png";
+let my_missle = new Image();
+my_missle.src = "images/my_missle.png";
 
-let alien = new Image();
-alien.src = "images/alien.gif";
+let alien_icon= new Image();
+alien_icon.src="images/alien_icon.png";
+
+let aliens = [];
+
+let alien1 = new Image();
+alien1.src = "images/alien-ship1.png";
+aliens.push(alien1)
+
+let alien2 = new Image();
+alien2.src = "images/alien-ship2.png";
+aliens.push(alien2)
+
+let alien3 = new Image();
+alien3.src = "images/alien-ship3.png";
+aliens.push(alien3)
+
+let alien4 = new Image();
+alien4.src = "images/alien-ship4.png";
+aliens.push(alien4)
+
+let alien5 = new Image();
+alien5.src = "images/alien-ship5.png";
+aliens.push(alien5)
 
 let alien_missle = new Image();
 alien_missle.src = "images/alien_missle.png";
 
+let spaceObjects=[];
+
+let spaceObj1 = new Image();
+spaceObj1.src = "images/sun.png";
+spaceObjects.push(spaceObj1)
+
+let spaceObj2 = new Image();
+spaceObj2.src = "images/sputnik.png";
+spaceObjects.push(spaceObj2)
+
+let spaceObj3 = new Image();
+spaceObj3.src = "images/saturn.png";
+spaceObjects.push(spaceObj3)
 
 /** init consts*/
 const SPEED:number = 40;
@@ -44,8 +79,10 @@ function isVisible(obj) {
 }
 
 function collision(target1, target2) {
-    return (target1.x > target2.x - 14 && target1.x < target2.x + 46) &&
-        (target1.y > target2.y - 32 && target1.y < target2.y + 32)
+    return (target1.x + target1.type.naturalWidth / 2 > target2.x &&
+        target1.x + target1.type.naturalWidth / 2 < target2.x + target2.type.naturalWidth) &&
+        (target1.y - target1.type.naturalHeight / 2 > target2.y - target2.type.naturalHeight / 2 &&
+        target1.y - target1.type.naturalHeight / 2 < target2.y + target2.type.naturalHeight / 2)
 }
 function gameOver(ship, enemies) {
     return enemies.some((enemy:any)=> {
@@ -59,10 +96,11 @@ function gameOver(ship, enemies) {
 }
 function paintStars(stars:star[]) {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = '#000000';
+    ctx.fillStyle = '#01162f';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     ctx.fillStyle = '#ffffff';
     stars.forEach((star:star):void=> {
+        //ctx.fillStyle = `rgba(255, 255, 255, ${star.opacity})`;
         ctx.beginPath();
         ctx.arc(star.x, star.y, star.size / 2, 0, 2 * Math.PI);
         ctx.closePath();
@@ -77,6 +115,7 @@ function drawShip(x, y) {
 
 function drawMyShots(shots, enemies) {
     ctx.fillStyle = '#B8860B';
+    let shoot_indexses = [];
     shots.forEach((shot:any, i:number)=> {
         for (let enemy of enemies) {
             if (!i) {
@@ -86,13 +125,16 @@ function drawMyShots(shots, enemies) {
                 ScoreSubject.onNext(SCORE_INC);
                 enemy.isDead = true;
                 enemy.x = enemy.y = -100;
+                shoot_indexses.push(i)
                 break;
             }
         }
         shot.y -= SHOTING_SPEED;
-        ctx.drawImage(missle, shot.x, shot.y);
-        //ctx.drawImage(missle, shot.xR, shot.yR);
+        ctx.drawImage(my_missle, shot.x, shot.y);
     });
+    shoot_indexses.forEach((index, i)=> {
+        shots.splice(index - i, 1)
+    })
 }
 
 
@@ -100,7 +142,7 @@ function drawEnemies(enemies) {
     enemies.forEach((enemy:any)=> {
         enemy.y += 5;
         if (!enemy.isDead) {
-            ctx.drawImage(alien, enemy.x, enemy.y);
+            ctx.drawImage(enemy.type, enemy.x, enemy.y);
         }
         enemy.shots.forEach((shot:any)=> {
             shot.y += SHOTING_SPEED;
@@ -110,11 +152,14 @@ function drawEnemies(enemies) {
 }
 
 function drawScores(score) {
+    ctx.drawImage(alien_icon, 5, 5);
     ctx.fillStyle = '#ffffff';
     ctx.font = 'bold 26px sans-serif';
     ctx.fillText(`Score: ${score}`, 40, 43)
 }
-
+function getRandomArbitrary(min, max) {
+    return Math.random() * (max - min) + min;
+}
 /** stream of stars*/
 var StarsStream = Rx.Observable.range(1, STARS_NUM)
     .map(():star => {
@@ -130,18 +175,20 @@ var StarsStream = Rx.Observable.range(1, STARS_NUM)
             .map(()=> {
                 stars.forEach((star:star)=> {
                     star.y > canvas.height ? star.y = 0 : star.y += 3;
+                    star.opacity=getRandomArbitrary(0,1)
                 });
                 return stars
             })
     });
 
+
 /** stream fo MyShip*/
 let mouseMove = Rx.Observable.fromEvent(canvas, 'mousemove')
 let MySpaceShip = mouseMove
     .map((e:MouseEvent):point=> {
-        return {x: e.pageX - 32, y: PLAYER_POS}
+        return {x: e.pageX - 32, y: PLAYER_POS, type: spaceShip}
     })
-    .startWith({x: canvas.width / 2, y: PLAYER_POS})
+    .startWith({x: canvas.width / 2, y: PLAYER_POS, type: spaceShip})
 
 
 let MyFire = Rx.Observable
@@ -158,22 +205,35 @@ let MyShots = Rx.Observable
         return shot.timestamp
     })
     .scan((shots, shot)=> {
-        shots.push({x: shot.x + 16, y: PLAYER_POS});
+        shots.push({
+            x: shot.x + spaceShip.naturalWidth / 2 - my_missle.naturalWidth / 2,
+            y: PLAYER_POS,
+            type: my_missle,
+        });
         return shots;
     }, []);
 
 /** stream fo Aliens*/
 var Enemies = Rx.Observable.timer(0, ENEMY_RESP)
     .scan((enemies)=> {
+        let index = Math.floor(Math.random() * aliens.length);
+        console.log(index)
+        let alien = aliens[index];
         let enemy = {
-            x: Math.random() * canvas.width,
+            x: Math.random() * (canvas.width - alien.naturalWidth),
             y: -30,
             shots: [],
-            isDead: false
+            isDead: false,
+            type: alien
         };
+
         Rx.Observable.timer(0, ENEMY_SHOT_RESP).subscribe(()=> {
             if (!enemy.isDead) {
-                enemy.shots.push({x: enemy.x+16, y: enemy.y})
+                enemy.shots.push({
+                    x: enemy.x + enemy.type.naturalWidth / 2 - alien_missle.naturalWidth / 2,
+                    y: enemy.y + enemy.type.naturalHeight,
+                    type: alien_missle
+                })
             }
             enemy.shots.filter(isVisible);
         });
