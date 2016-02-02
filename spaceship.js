@@ -210,7 +210,6 @@ function startGame() {
         setTimeout(startGame, 2000);
     });
     Game.subscribe(function (items) {
-        console.log(items.enemies.length);
         window.requestAnimationFrame(function () {
             var stars = items.stars, mySpaceShip = items.mySpaceShip, myShots = items.myShots, enemies = items.enemies;
             paintStars(stars);
