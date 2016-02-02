@@ -215,20 +215,9 @@ function startGame() {
                 enemy.shots.filter(isVisible);
             });
             enemies.push(enemy);
-            let activeEnemies = enemies.filter((enemy:any)=> {
-                return isVisible(enemy) && enemy.shots.length && !enemy.isDead
-            });
-            let activeLength = activeEnemies.length;
-
-            if (activeLength > 1) {
-                activeEnemies.unshift(activeLength);
-                activeEnemies.unshift(0);
-                enemies.length = 0;
-                Array.prototype.splice.apply(enemies, activeEnemies)
-            }
 
             return enemies.filter((enemy:any)=> {
-                return !(enemy.isDead && !enemy.shots.length && !isVisible(enemy))
+                return !(enemy.isDead || !isVisible(enemy))
             });
         }, []);
 
