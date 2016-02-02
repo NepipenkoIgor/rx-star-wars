@@ -193,7 +193,6 @@ function startGame() {
     /** stream fo Aliens*/
     let Enemies = Rx.Observable.timer(0, ENEMY_RESP)
         .scan((enemies)=> {
-            console.log('@')
             let index = Math.floor(Math.random() * aliens.length);
             let alien = aliens[index];
             let enemy = {
