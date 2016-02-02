@@ -53,8 +53,8 @@ var SHOTING_SPEED = 15;
 var SCORE_INC = 10;
 /** util game functions*/
 function isVisible(obj) {
-    return obj.x > -96 && obj.x < canvas.width + 96 &&
-        obj.y > -96 && obj.y < canvas.height + 96;
+    return obj.x > -obj.type.naturalWidth && obj.x < canvas.width + obj.type.naturalWidth &&
+        obj.y > -obj.type.naturalHeight && obj.y < canvas.height + obj.type.naturalHeight;
 }
 function collision(target1, target2) {
     return (target1.x + target1.type.naturalWidth / 2 > target2.x &&
@@ -64,9 +64,9 @@ function collision(target1, target2) {
 }
 function gameOver(ship, enemies) {
     return enemies.some(function (enemy) {
-        //if (collision(ship, enemy)) {
-        //    return true;
-        //}
+        if (collision(ship, enemy)) {
+            return true;
+        }
         return enemy.shots.some(function (shot) {
             return collision(shot, ship);
         });
@@ -87,30 +87,6 @@ function paintStars(stars) {
 }
 function drawShip(x, y) {
     ctx.drawImage(spaceShip, x, y);
-}
-function drawMyShots(shots, enemies) {
-    ctx.fillStyle = '#B8860B';
-    var shoot_indexses = [];
-    shots.forEach(function (shot, i) {
-        for (var _i = 0; _i < enemies.length; _i++) {
-            var enemy = enemies[_i];
-            if (!i) {
-                return;
-            }
-            if (!enemy.isDead && collision(shot, enemy)) {
-                ScoreSubject.onNext(SCORE_INC);
-                enemy.isDead = true;
-                enemy.x = enemy.y = -100;
-                shoot_indexses.push(i);
-                break;
-            }
-        }
-        shot.y -= SHOTING_SPEED;
-        ctx.drawImage(my_missle, shot.x, shot.y);
-    });
-    shoot_indexses.forEach(function (index, i) {
-        shots.splice(index - i, 1);
-    });
 }
 function drawEnemies(enemies) {
     enemies.forEach(function (enemy) {
@@ -133,108 +109,140 @@ function drawScores(score) {
 function getRandomArbitrary(min, max) {
     return Math.random() * (max - min) + min;
 }
-/** stream of stars*/
-var StarsStream = Rx.Observable.range(1, STARS_NUM)
-    .map(function () {
-    return {
-        x: Math.random() * canvas.width,
-        y: Math.random() * canvas.height,
-        size: Math.random() * 3 + 1
-    };
-})
-    .toArray()
-    .flatMap(function (stars) {
-    return Rx.Observable.timer(0, SPEED)
+function startGame() {
+    /** stream of stars*/
+    var StarsStream = Rx.Observable.range(1, STARS_NUM)
         .map(function () {
-        stars.forEach(function (star) {
-            star.y > canvas.height ? star.y = 0 : star.y += 3;
-            star.opacity = getRandomArbitrary(0, 1);
-        });
-        return stars;
-    });
-});
-/** stream fo MyShip*/
-var mouseMove = Rx.Observable.fromEvent(canvas, 'mousemove');
-var MySpaceShip = mouseMove
-    .map(function (e) {
-    return { x: e.pageX - 32, y: PLAYER_POS, type: spaceShip };
-})
-    .startWith({ x: canvas.width / 2, y: PLAYER_POS, type: spaceShip });
-var MyFire = Rx.Observable
-    .fromEvent(canvas, 'click')
-    .sample(200)
-    .timestamp();
-var MyShots = Rx.Observable
-    .combineLatest(MySpaceShip, MyFire, function (MySpaceShip, MyFire) {
-    return { timestamp: MyFire.timestamp, x: MySpaceShip.x };
-})
-    .distinctUntilChanged(function (shot) {
-    return shot.timestamp;
-})
-    .scan(function (shots, shot) {
-    shots.push({
-        x: shot.x + spaceShip.naturalWidth / 2 - my_missle.naturalWidth / 2,
-        y: PLAYER_POS,
-        type: my_missle
-    });
-    return shots;
-}, []);
-/** stream fo Aliens*/
-var Enemies = Rx.Observable.timer(0, ENEMY_RESP)
-    .scan(function (enemies) {
-    var index = Math.floor(Math.random() * aliens.length);
-    var alien = aliens[index];
-    var enemy = {
-        x: Math.random() * (canvas.width - alien.naturalWidth),
-        y: -30,
-        shots: [],
-        isDead: false,
-        type: alien
-    };
-    Rx.Observable.timer(0, ENEMY_SHOT_RESP).subscribe(function () {
-        if (!enemy.isDead) {
-            enemy.shots.push({
-                x: enemy.x + enemy.type.naturalWidth / 2 - alien_missle.naturalWidth / 2,
-                y: enemy.y + enemy.type.naturalHeight,
-                type: alien_missle
+        return {
+            x: Math.random() * canvas.width,
+            y: Math.random() * canvas.height,
+            size: Math.random() * 3 + 1
+        };
+    })
+        .toArray()
+        .flatMap(function (stars) {
+        return Rx.Observable.timer(0, SPEED)
+            .map(function () {
+            stars.forEach(function (star) {
+                star.y > canvas.height ? star.y = 0 : star.y += 3;
+                star.opacity = getRandomArbitrary(0, 1);
             });
+            return stars;
+        });
+    });
+    /** stream fo MyShip*/
+    var mouseMove = Rx.Observable.fromEvent(canvas, 'mousemove');
+    var MySpaceShip = mouseMove
+        .map(function (e) {
+        return { x: e.pageX - 32, y: PLAYER_POS, type: spaceShip };
+    })
+        .startWith({ x: canvas.width / 2, y: PLAYER_POS, type: spaceShip });
+    var MyFire = Rx.Observable
+        .fromEvent(canvas, 'click')
+        .timestamp();
+    var MyShots = Rx.Observable
+        .combineLatest(MySpaceShip, MyFire, function (MySpaceShip, MyFire) {
+        return { timestamp: MyFire.timestamp, x: MySpaceShip.x };
+    })
+        .distinctUntilChanged(function (shot) {
+        return shot.timestamp;
+    })
+        .scan(function (shots, shot) {
+        shots.push({
+            x: shot.x + spaceShip.naturalWidth / 2 - my_missle.naturalWidth / 2,
+            y: PLAYER_POS,
+            type: my_missle
+        });
+        return shots;
+    }, []);
+    /** stream fo Aliens*/
+    var Enemies = Rx.Observable.timer(0, ENEMY_RESP)
+        .scan(function (enemies) {
+        var index = Math.floor(Math.random() * aliens.length);
+        var alien = aliens[index];
+        var enemy = {
+            x: Math.random() * (canvas.width - alien.naturalWidth),
+            y: -30,
+            shots: [],
+            isDead: false,
+            type: alien
+        };
+        Rx.Observable.timer(0, ENEMY_SHOT_RESP).subscribe(function () {
+            if (!enemy.isDead) {
+                enemy.shots.push({
+                    x: enemy.x + enemy.type.naturalWidth / 2 - alien_missle.naturalWidth / 2,
+                    y: enemy.y + enemy.type.naturalHeight,
+                    type: alien_missle
+                });
+            }
+            enemy.shots.filter(isVisible);
+        });
+        enemies.push(enemy);
+        return enemies.filter(function (enemy) {
+            return !(enemy.isDead && !enemy.shots.length && !isVisible(enemy));
+        });
+    }, []);
+    /** stream of scores*/
+    var ScoreSubject = new Rx.Subject();
+    var Score = ScoreSubject.scan(function (prev, cur) {
+        return prev + cur;
+    }, 0).concat(Rx.Observable.return(0));
+    var currentScore = 0;
+    Score.subscribe(function (score) {
+        currentScore = score;
+    });
+    /** stream of full Game*/
+    var Game = Rx.Observable.combineLatest(StarsStream, MySpaceShip, MyShots, Enemies, function (stars, mySpaceShip, myShots, enemies) {
+        return {
+            stars: stars,
+            mySpaceShip: mySpaceShip,
+            myShots: myShots,
+            enemies: enemies
+        };
+    })
+        .sample(40)
+        .takeWhile(function (items) {
+        if (!gameOver(items.mySpaceShip, items.enemies)) {
+            return true;
         }
-        enemy.shots.filter(isVisible);
+        //ctx.clearRect(0, 0, canvas.width, canvas.height);
+        setTimeout(startGame, 2000);
     });
-    enemies.push(enemy);
-    return enemies.filter(function (enemy) {
-        return !(enemy.isDead && !enemy.shots.length && !isVisible(enemy));
+    Game.subscribe(function (items) {
+        window.requestAnimationFrame(function () {
+            var stars = items.stars, mySpaceShip = items.mySpaceShip, myShots = items.myShots, enemies = items.enemies;
+            paintStars(stars);
+            drawShip(mySpaceShip.x, mySpaceShip.y);
+            drawMyShots(myShots, enemies);
+            drawEnemies(enemies);
+            drawScores(currentScore);
+        });
     });
-}, []);
-/** stream of scores*/
-var ScoreSubject = new Rx.Subject();
-var Score = ScoreSubject.scan(function (prev, cur) {
-    return prev + cur;
-}, 0).concat(Rx.Observable.return(0));
-var currentScore = 0;
-Score.subscribe(function (score) {
-    currentScore = score;
-});
-/** stream of full Game*/
-var Game = Rx.Observable.combineLatest(StarsStream, MySpaceShip, MyShots, Enemies, function (stars, mySpaceShip, myShots, enemies) {
-    return {
-        stars: stars,
-        mySpaceShip: mySpaceShip,
-        myShots: myShots,
-        enemies: enemies
-    };
-})
-    .sample(40)
-    .takeWhile(function (items) {
-    return !gameOver(items.mySpaceShip, items.enemies);
-});
-Game.subscribe(function (items) {
-    var stars = items.stars, mySpaceShip = items.mySpaceShip, myShots = items.myShots, enemies = items.enemies;
-    paintStars(stars);
-    drawShip(mySpaceShip.x, mySpaceShip.y);
-    drawMyShots(myShots, enemies);
-    drawEnemies(enemies);
-    drawScores(currentScore);
-});
-/**  init first value in shot's stream*/
-canvas.click();
+    function drawMyShots(shots, enemies) {
+        ctx.fillStyle = '#B8860B';
+        var shoot_indexses = [];
+        shots.forEach(function (shot, i) {
+            for (var _i = 0; _i < enemies.length; _i++) {
+                var enemy = enemies[_i];
+                if (!i) {
+                    return;
+                }
+                if (!enemy.isDead && collision(shot, enemy)) {
+                    ScoreSubject.onNext(SCORE_INC);
+                    enemy.isDead = true;
+                    enemy.x = enemy.y = -1000;
+                    shoot_indexses.push(i);
+                    break;
+                }
+            }
+            shot.y -= SHOTING_SPEED;
+            ctx.drawImage(my_missle, shot.x, shot.y);
+        });
+        shoot_indexses.forEach(function (index, i) {
+            shots.splice(index - i, 1);
+        });
+    }
+    /**  init first value in shot's stream*/
+    canvas.click();
+}
+startGame();
