@@ -75,10 +75,10 @@ function isVisible(obj) {
         obj.y > -obj.type.naturalHeight && obj.y < canvas.height + obj.type.naturalHeight;
 }
 function collision(target1, target2) {
-    return ((target1.x > target2.x) &&
-        (target1.x < target2.x + target2.type.naturalWidth)) &&
+    return ((target1.x + target1.type.naturalWidth >= target2.x) &&
+        (target1.x <= target2.x + target2.type.naturalWidth)) &&
         ((target1.y > target2.y) &&
-            (target1.y + target1.type.naturalHeight) < (target2.y + target2.type.naturalHeight));
+            target1.y < (target2.y + target2.type.naturalHeight / 2));
 }
 function gameOver(ship, enemies) {
     return enemies.some(function (enemy) {
@@ -116,58 +116,6 @@ function pointSpaceObject(spaceObject) {
 function drawShip(ship) {
     ctx.clearRect(ship.oldX, ship.y, ship.type.naturalWidth, ship.type.naturalHeight);
     ctx.drawImage(spaceShip, ship.x, ship.y);
-}
-function drawEnemies(enemies, mySpaceShip) {
-    enemies.forEach(function (enemy, i) {
-        if (enemy.isDraw) {
-            return;
-        }
-        enemy.isDraw = true;
-        drawEnemy(enemy, mySpaceShip);
-    });
-}
-function drawEnemy(enemy, mySpaceShip) {
-    if (enemy.stop) {
-        return;
-    }
-    if ((!enemy.shotsCount || enemy.shotsCount > 30) && !enemy.isDead) {
-        enemy.shotsCount = 0;
-        enemy.shots.push({
-            x: enemy.x + enemy.type.naturalWidth / 2 - alien_missle.naturalWidth / 2,
-            y: enemy.y + enemy.type.naturalHeight,
-            type: alien_missle
-        });
-    }
-    enemy.shotsCount++;
-    if (enemy.y > canvas.height) {
-        ctx.clearRect(enemy.x, enemy.y, enemy.type.naturalWidth, enemy.type.naturalHeight);
-        enemy.isDead = true;
-        return;
-    }
-    if (enemy.isDead && !enemy.boom) {
-        ctx.clearRect(enemy.x, enemy.y, enemy.type.naturalWidth, enemy.type.naturalHeight);
-        enemy.boom = true;
-        ctx.drawImage(boom, enemy.x, enemy.y);
-        setTimeout(function () {
-            ctx.clearRect(enemy.x, enemy.y, boom.naturalWidth, boom.naturalHeight);
-        }, 60);
-    }
-    if (!enemy.isDead) {
-        ctx.clearRect(enemy.x, enemy.y, enemy.type.naturalWidth, enemy.type.naturalHeight);
-        enemy.y += ALIEN_SPEED;
-        ctx.drawImage(enemy.type, enemy.x, enemy.y);
-    }
-    enemy.shots.forEach(function (shot) {
-        if (collision(shot, mySpaceShip)) {
-            mySpaceShip.isDead = true;
-        }
-        ctx.clearRect(shot.x, shot.y, shot.type.naturalWidth, shot.type.naturalHeight);
-        shot.y += SHOTING_SPEED;
-        ctx.drawImage(alien_missle, shot.x, shot.y);
-    });
-    window.requestAnimationFrame(function () {
-        drawEnemy(enemy, mySpaceShip);
-    });
 }
 function drawScores(score) {
     ctx.clearRect(0, 0, 400, 100);
@@ -327,29 +275,27 @@ function startGame() {
             mySpaceShip: mySpaceShip
         };
     })
-        .sample(20)
+        .sample(5)
         .takeWhile(function (items) {
-        if (!items.mySpaceShip.isDead) {
+        var mySpaceShip = items.mySpaceShip;
+        if (!mySpaceShip.isDead) {
             return true;
         }
         console.log('Game Over');
-        items.enemies.forEach(function (enemy) {
-            enemy.stop = true;
-        });
+        MySpaceShipSub.dispose();
+        if (!mySpaceShip.collapseWithEnemy) {
+            ctx.clearRect(mySpaceShip.x, mySpaceShip.y, mySpaceShip.type.naturalWidth, mySpaceShip.type.naturalHeight);
+            ctx.drawImage(boom, mySpaceShip.x, mySpaceShip.y);
+        }
         items.myShots.forEach(function (shot) {
             shot.stop = true;
         });
-        MySpaceShipSub.dispose();
-        ctx.clearRect(items.mySpaceShip.x, items.mySpaceShip.y, items.mySpaceShip.type.naturalWidth, items.mySpaceShip.type.naturalHeight);
-        ctx.drawImage(boom, items.mySpaceShip.x, items.mySpaceShip.y);
     });
     Game.subscribe(function (items) {
         var mySpaceShip = items.mySpaceShip, myShots = items.myShots, enemies = items.enemies;
         drawEnemies(enemies, mySpaceShip);
         drawMyShots(myShots, enemies);
-        //drawEnemies(enemies);
         drawScores(currentScore);
-        //drawShip(mySpaceShip);
     });
     function drawMyShots(shots, enemies) {
         shots.forEach(function (shot, i) {
@@ -383,6 +329,69 @@ function startGame() {
         }
         window.requestAnimationFrame(function () {
             drawShot(shot, enemies);
+        });
+    }
+    function drawEnemies(enemies, mySpaceShip) {
+        enemies.forEach(function (enemy, i) {
+            if (enemy.isDraw) {
+                return;
+            }
+            enemy.isDraw = true;
+            drawEnemy(enemy, mySpaceShip);
+        });
+    }
+    function drawEnemy(enemy, mySpaceShip) {
+        if (collision(mySpaceShip, enemy)) {
+            MySpaceShipSub.dispose();
+            mySpaceShip.isDead = true;
+            mySpaceShip.collapseWithEnemy = true;
+            ctx.clearRect(mySpaceShip.x, mySpaceShip.y, mySpaceShip.type.naturalWidth, mySpaceShip.type.naturalHeight);
+            ctx.drawImage(boom, mySpaceShip.x, mySpaceShip.y);
+            ctx.clearRect(enemy.x, enemy.y, enemy.type.naturalWidth, enemy.type.naturalHeight);
+            enemy.boom = true;
+            ctx.drawImage(boom, enemy.x, enemy.y);
+            return;
+        }
+        if (mySpaceShip.isDead) {
+            return;
+        }
+        if ((!enemy.shotsCount || enemy.shotsCount > 30) && !enemy.isDead) {
+            enemy.shotsCount = 0;
+            enemy.shots.push({
+                x: enemy.x + enemy.type.naturalWidth / 2 - alien_missle.naturalWidth / 2,
+                y: enemy.y + enemy.type.naturalHeight,
+                type: alien_missle
+            });
+        }
+        enemy.shotsCount++;
+        if (enemy.y > canvas.height) {
+            ctx.clearRect(enemy.x, enemy.y, enemy.type.naturalWidth, enemy.type.naturalHeight);
+            enemy.isDead = true;
+            return;
+        }
+        if (enemy.isDead && !enemy.boom) {
+            ctx.clearRect(enemy.x, enemy.y, enemy.type.naturalWidth, enemy.type.naturalHeight);
+            enemy.boom = true;
+            ctx.drawImage(boom, enemy.x, enemy.y);
+            setTimeout(function () {
+                ctx.clearRect(enemy.x, enemy.y, boom.naturalWidth, boom.naturalHeight);
+            }, 60);
+        }
+        if (!enemy.isDead) {
+            ctx.clearRect(enemy.x, enemy.y, enemy.type.naturalWidth, enemy.type.naturalHeight);
+            enemy.y += ALIEN_SPEED;
+            ctx.drawImage(enemy.type, enemy.x, enemy.y);
+        }
+        enemy.shots.forEach(function (shot) {
+            if (collision(shot, mySpaceShip)) {
+                mySpaceShip.isDead = true;
+            }
+            ctx.clearRect(shot.x, shot.y, shot.type.naturalWidth, shot.type.naturalHeight);
+            shot.y += SHOTING_SPEED;
+            ctx.drawImage(alien_missle, shot.x, shot.y);
+        });
+        window.requestAnimationFrame(function () {
+            drawEnemy(enemy, mySpaceShip);
         });
     }
     /**  init first value in shot's stream*/

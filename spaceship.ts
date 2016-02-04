@@ -7,7 +7,7 @@
 /// <reference path="./typings/tsd.d.ts" />
 
 type star={x:number,y:number,size:number,opacity?:number};
-type point={x:number,y:number,type?:any,isDead?:any};
+type point={x:number,y:number,type?:any,isDead?:any,collapseWithEnemy?:boolean};
 
 /** init canvas*/
 let canvasBack:HTMLCanvasElement = <HTMLCanvasElement>document.querySelector('#arena_background');
@@ -108,10 +108,12 @@ function isVisible(obj) {
 }
 
 function collision(target1, target2) {
-    return ((target1.x > target2.x ) &&
-        (target1.x < target2.x + target2.type.naturalWidth)) &&
+
+
+    return ((target1.x + target1.type.naturalWidth >= target2.x ) &&
+        (target1.x <= target2.x + target2.type.naturalWidth)) &&
         ((target1.y > target2.y) &&
-        (target1.y + target1.type.naturalHeight ) < (target2.y + target2.type.naturalHeight) )
+        target1.y < (target2.y + target2.type.naturalHeight / 2))
 }
 function gameOver(ship, enemies) {
     return enemies.some((enemy:any)=> {
@@ -153,59 +155,6 @@ function drawShip(ship) {
 }
 
 
-function drawEnemies(enemies, mySpaceShip) {
-    enemies.forEach((enemy:any, i)=> {
-        if (enemy.isDraw) {
-            return;
-        }
-        enemy.isDraw = true;
-        drawEnemy(enemy, mySpaceShip)
-    })
-}
-function drawEnemy(enemy, mySpaceShip) {
-    if (enemy.stop) {
-        return;
-    }
-    if ((!enemy.shotsCount || enemy.shotsCount > 30) && !enemy.isDead) {
-        enemy.shotsCount = 0;
-        enemy.shots.push({
-            x: enemy.x + enemy.type.naturalWidth / 2 - alien_missle.naturalWidth / 2,
-            y: enemy.y + enemy.type.naturalHeight,
-            type: alien_missle
-        })
-    }
-    enemy.shotsCount++;
-    if (enemy.y > canvas.height) {
-        ctx.clearRect(enemy.x, enemy.y, enemy.type.naturalWidth, enemy.type.naturalHeight)
-        enemy.isDead = true;
-        return;
-    }
-    if (enemy.isDead && !enemy.boom) {
-        ctx.clearRect(enemy.x, enemy.y, enemy.type.naturalWidth, enemy.type.naturalHeight)
-        enemy.boom = true;
-        ctx.drawImage(boom, enemy.x, enemy.y);
-        setTimeout(()=> {
-            ctx.clearRect(enemy.x, enemy.y, boom.naturalWidth, boom.naturalHeight)
-        }, 60)
-    }
-    if (!enemy.isDead) {
-        ctx.clearRect(enemy.x, enemy.y, enemy.type.naturalWidth, enemy.type.naturalHeight)
-        enemy.y += ALIEN_SPEED;
-        ctx.drawImage(enemy.type, enemy.x, enemy.y);
-    }
-    enemy.shots.forEach((shot:any)=> {
-        if (collision(shot, mySpaceShip)) {
-            mySpaceShip.isDead = true;
-        }
-        ctx.clearRect(shot.x, shot.y, shot.type.naturalWidth, shot.type.naturalHeight)
-        shot.y += SHOTING_SPEED;
-        ctx.drawImage(alien_missle, shot.x, shot.y);
-    });
-    window.requestAnimationFrame(()=> {
-        drawEnemy(enemy, mySpaceShip)
-    })
-}
-
 function drawScores(score) {
     ctx.clearRect(0, 0, 400, 100);
     ctx.drawImage(alien_icon, 5, 5);
@@ -239,7 +188,7 @@ StarsStream.subscribe((stars)=> {
 });
 
 let SpaceObjectsStream = Rx.Observable.from(spaceObjects)
-    .map((spaceObject,i):any => {
+    .map((spaceObject, i):any => {
         return {
             x: Math.random() * canvas.width,
             y: Math.random() * canvas.height,
@@ -247,7 +196,7 @@ let SpaceObjectsStream = Rx.Observable.from(spaceObjects)
         }
     })
 
-SpaceObjectsStream.subscribe((spaceObject)=>{
+SpaceObjectsStream.subscribe((spaceObject)=> {
     pointSpaceObject(spaceObject)
 })
 
@@ -383,33 +332,31 @@ function startGame() {
                 mySpaceShip: mySpaceShip
             };
         })
-        .sample(20)
+        .sample(5)
         .takeWhile((items)=> {
-            if (!items.mySpaceShip.isDead) {
+            let {mySpaceShip}=items;
+            if (!mySpaceShip.isDead) {
                 return true;
             }
             console.log('Game Over');
-            items.enemies.forEach((enemy:any)=> {
-                enemy.stop = true;
-            });
+            MySpaceShipSub.dispose();
+            if (!mySpaceShip.collapseWithEnemy) {
+                ctx.clearRect(mySpaceShip.x,
+                    mySpaceShip.y,
+                    mySpaceShip.type.naturalWidth,
+                    mySpaceShip.type.naturalHeight);
+                ctx.drawImage(boom, mySpaceShip.x, mySpaceShip.y)
+            }
             items.myShots.forEach((shot:any)=> {
                 shot.stop = true;
             });
-            MySpaceShipSub.dispose();
-            ctx.clearRect(items.mySpaceShip.x,
-                items.mySpaceShip.y,
-                items.mySpaceShip.type.naturalWidth,
-                items.mySpaceShip.type.naturalHeight);
-            ctx.drawImage(boom, items.mySpaceShip.x, items.mySpaceShip.y)
         });
 
     Game.subscribe((items)=> {
         let {mySpaceShip, myShots, enemies}=items;
         drawEnemies(enemies, mySpaceShip);
         drawMyShots(myShots, enemies);
-        //drawEnemies(enemies);
         drawScores(currentScore)
-        //drawShip(mySpaceShip);
     });
     function drawMyShots(shots, enemies) {
         shots.forEach((shot:any, i)=> {
@@ -438,7 +385,6 @@ function startGame() {
                 return;
             }
         }
-
         shot.y -= SHOTING_SPEED;
         if (!shot.isDead) {
             ctx.drawImage(shot.type, shot.x, shot.y);
@@ -448,9 +394,77 @@ function startGame() {
         })
     }
 
+    function drawEnemies(enemies, mySpaceShip) {
+        enemies.forEach((enemy:any, i)=> {
+            if (enemy.isDraw) {
+                return;
+            }
+            enemy.isDraw = true;
+            drawEnemy(enemy, mySpaceShip)
+        })
+    }
+
+    function drawEnemy(enemy, mySpaceShip) {
+        if (collision(mySpaceShip, enemy)) {
+            MySpaceShipSub.dispose();
+            mySpaceShip.isDead = true;
+            mySpaceShip.collapseWithEnemy = true;
+            ctx.clearRect(mySpaceShip.x,
+                mySpaceShip.y,
+                mySpaceShip.type.naturalWidth,
+                mySpaceShip.type.naturalHeight);
+            ctx.drawImage(boom, mySpaceShip.x, mySpaceShip.y);
+            ctx.clearRect(enemy.x, enemy.y, enemy.type.naturalWidth, enemy.type.naturalHeight)
+            enemy.boom = true;
+            ctx.drawImage(boom, enemy.x, enemy.y);
+            return
+        }
+        if (mySpaceShip.isDead) {
+            return;
+        }
+        if ((!enemy.shotsCount || enemy.shotsCount > 30) && !enemy.isDead) {
+            enemy.shotsCount = 0;
+            enemy.shots.push({
+                x: enemy.x + enemy.type.naturalWidth / 2 - alien_missle.naturalWidth / 2,
+                y: enemy.y + enemy.type.naturalHeight,
+                type: alien_missle
+            })
+        }
+        enemy.shotsCount++;
+        if (enemy.y > canvas.height) {
+            ctx.clearRect(enemy.x, enemy.y, enemy.type.naturalWidth, enemy.type.naturalHeight)
+            enemy.isDead = true;
+            return;
+        }
+        if (enemy.isDead && !enemy.boom) {
+            ctx.clearRect(enemy.x, enemy.y, enemy.type.naturalWidth, enemy.type.naturalHeight)
+            enemy.boom = true;
+            ctx.drawImage(boom, enemy.x, enemy.y);
+            setTimeout(()=> {
+                ctx.clearRect(enemy.x, enemy.y, boom.naturalWidth, boom.naturalHeight)
+            }, 60)
+        }
+        if (!enemy.isDead) {
+            ctx.clearRect(enemy.x, enemy.y, enemy.type.naturalWidth, enemy.type.naturalHeight)
+            enemy.y += ALIEN_SPEED;
+            ctx.drawImage(enemy.type, enemy.x, enemy.y);
+        }
+        enemy.shots.forEach((shot:any)=> {
+            if (collision(shot, mySpaceShip)) {
+                mySpaceShip.isDead = true;
+            }
+            ctx.clearRect(shot.x, shot.y, shot.type.naturalWidth, shot.type.naturalHeight)
+            shot.y += SHOTING_SPEED;
+            ctx.drawImage(alien_missle, shot.x, shot.y);
+        });
+        window.requestAnimationFrame(()=> {
+            drawEnemy(enemy, mySpaceShip)
+        })
+    }
+
     /**  init first value in shot's stream*/
     //var clickEvent = document.createEvent('MouseEvents');
     //clickEvent.initEvent('mousedown', true, true);
     //canvas.dispatchEvent(clickEvent);
 }
-startGame()
+startGame();
