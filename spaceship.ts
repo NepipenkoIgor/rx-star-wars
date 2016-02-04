@@ -10,12 +10,51 @@ type star={x:number,y:number,size:number,opacity?:number};
 type point={x:number,y:number,type?:any,isDead?:any,collapseWithEnemy?:boolean};
 
 /** init canvas*/
+let area_planets = [];
+
 let canvasBack:HTMLCanvasElement = <HTMLCanvasElement>document.querySelector('#arena_background');
 let ctxBack:CanvasRenderingContext2D = canvasBack.getContext('2d');
 canvasBack.height = window.innerHeight;
 canvasBack.width = window.innerWidth;
 
-let canvasPlanets:HTMLCanvasElement = <HTMLCanvasElement>document.querySelector('#arena_planets');
+
+let canvasPlanets1:HTMLCanvasElement = <HTMLCanvasElement>document.querySelector('#arena_planets_1');
+let ctxPlanets1:CanvasRenderingContext2D = canvasPlanets1.getContext('2d');
+canvasPlanets1.height = window.innerHeight;
+canvasPlanets1.width = window.innerWidth;
+area_planets.push(ctxPlanets1)
+
+let canvasPlanets2:HTMLCanvasElement = <HTMLCanvasElement>document.querySelector('#arena_planets_2');
+let ctxPlanets2:CanvasRenderingContext2D = canvasPlanets2.getContext('2d');
+canvasPlanets2.height = window.innerHeight;
+canvasPlanets2.width = window.innerWidth;
+area_planets.push(ctxPlanets2)
+
+let canvasPlanets3:HTMLCanvasElement = <HTMLCanvasElement>document.querySelector('#arena_planets_3');
+let ctxPlanets3:CanvasRenderingContext2D = canvasPlanets3.getContext('2d');
+canvasPlanets3.height = window.innerHeight;
+canvasPlanets3.width = window.innerWidth;
+area_planets.push(ctxPlanets3)
+
+let canvasPlanets4:HTMLCanvasElement = <HTMLCanvasElement>document.querySelector('#arena_planets_4');
+let ctxPlanets4:CanvasRenderingContext2D = canvasPlanets4.getContext('2d');
+canvasPlanets4.height = window.innerHeight;
+canvasPlanets4.width = window.innerWidth;
+area_planets.push(ctxPlanets4)
+
+let canvasPlanets5:HTMLCanvasElement = <HTMLCanvasElement>document.querySelector('#arena_planets_5');
+let ctxPlanets5:CanvasRenderingContext2D = canvasPlanets5.getContext('2d');
+canvasPlanets5.height = window.innerHeight;
+canvasPlanets5.width = window.innerWidth;
+area_planets.push(ctxPlanets5)
+
+let canvasPlanets6:HTMLCanvasElement = <HTMLCanvasElement>document.querySelector('#arena_planets_6');
+let ctxPlanets6:CanvasRenderingContext2D = canvasPlanets6.getContext('2d');
+canvasPlanets6.height = window.innerHeight;
+canvasPlanets6.width = window.innerWidth;
+area_planets.push(ctxPlanets6)
+
+let canvasPlanets:HTMLCanvasElement = <HTMLCanvasElement>document.querySelector('#arena_planets_1');
 let ctxPlanets:CanvasRenderingContext2D = canvasPlanets.getContext('2d');
 canvasPlanets.height = window.innerHeight;
 canvasPlanets.width = window.innerWidth;
@@ -70,27 +109,27 @@ let spaceObjects = [];
 
 let spaceObj1 = new Image();
 spaceObj1.src = "images/sun.png";
-spaceObjects.push(spaceObj1)
+spaceObjects.push(spaceObj1);
 
 let spaceObj2 = new Image();
 spaceObj2.src = "images/sputnik.png";
-spaceObjects.push(spaceObj2)
+spaceObjects.push(spaceObj2);
 
 let spaceObj3 = new Image();
 spaceObj3.src = "images/saturn.png";
-spaceObjects.push(spaceObj3)
+spaceObjects.push(spaceObj3);
 
 let spaceObj4 = new Image();
 spaceObj4.src = "images/meteor1.png";
-spaceObjects.push(spaceObj4)
+spaceObjects.push(spaceObj4);
 
 let spaceObj5 = new Image();
 spaceObj5.src = "images/meteor2.png";
-spaceObjects.push(spaceObj5)
+spaceObjects.push(spaceObj5);
 
 let spaceObj6 = new Image();
 spaceObj6.src = "images/meteor3.png";
-spaceObjects.push(spaceObj6)
+spaceObjects.push(spaceObj6);
 
 /** init consts*/
 const SPEED:number = 40;
@@ -138,12 +177,12 @@ function paintStars(stars:star[]) {
     ctxBack.fill();
 }
 function pointSpaceObject(spaceObject) {
-    ctxPlanets.clearRect(spaceObject.x, spaceObject.y, spaceObject.type.naturalWidth, spaceObject.type.naturalHeight);
+    area_planets[spaceObject.num].clearRect(spaceObject.x, spaceObject.y, spaceObject.type.naturalWidth, spaceObject.type.naturalHeight);
     spaceObject.y += 1;
     if (spaceObject.y > canvas.height) {
         spaceObject.y = 0;
     }
-    ctxPlanets.drawImage(spaceObject.type, spaceObject.x, spaceObject.y);
+    area_planets[spaceObject.num].drawImage(spaceObject.type, spaceObject.x, spaceObject.y);
     window.requestAnimationFrame(()=> {
         pointSpaceObject(spaceObject);
     })
@@ -192,7 +231,8 @@ let SpaceObjectsStream = Rx.Observable.from(spaceObjects)
         return {
             x: Math.random() * canvas.width,
             y: Math.random() * canvas.height,
-            type: spaceObjects[i]
+            type: spaceObjects[i],
+            num: i
         }
     })
 
@@ -416,7 +456,6 @@ function startGame() {
             ctx.clearRect(enemy.x, enemy.y, enemy.type.naturalWidth, enemy.type.naturalHeight)
             ctx.drawImage(boom, mySpaceShip.x, mySpaceShip.y);
             enemy.boom = true;
-            //ctx.drawImage(boom, enemy.x, enemy.y);
             return
         }
         if (mySpaceShip.isDead) {

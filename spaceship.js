@@ -2,11 +2,42 @@
  * Created by igor on 1/29/16.
  */
 /** init canvas*/
+var area_planets = [];
 var canvasBack = document.querySelector('#arena_background');
 var ctxBack = canvasBack.getContext('2d');
 canvasBack.height = window.innerHeight;
 canvasBack.width = window.innerWidth;
-var canvasPlanets = document.querySelector('#arena_planets');
+var canvasPlanets1 = document.querySelector('#arena_planets_1');
+var ctxPlanets1 = canvasPlanets1.getContext('2d');
+canvasPlanets1.height = window.innerHeight;
+canvasPlanets1.width = window.innerWidth;
+area_planets.push(ctxPlanets1);
+var canvasPlanets2 = document.querySelector('#arena_planets_2');
+var ctxPlanets2 = canvasPlanets2.getContext('2d');
+canvasPlanets2.height = window.innerHeight;
+canvasPlanets2.width = window.innerWidth;
+area_planets.push(ctxPlanets2);
+var canvasPlanets3 = document.querySelector('#arena_planets_3');
+var ctxPlanets3 = canvasPlanets3.getContext('2d');
+canvasPlanets3.height = window.innerHeight;
+canvasPlanets3.width = window.innerWidth;
+area_planets.push(ctxPlanets3);
+var canvasPlanets4 = document.querySelector('#arena_planets_4');
+var ctxPlanets4 = canvasPlanets4.getContext('2d');
+canvasPlanets4.height = window.innerHeight;
+canvasPlanets4.width = window.innerWidth;
+area_planets.push(ctxPlanets4);
+var canvasPlanets5 = document.querySelector('#arena_planets_5');
+var ctxPlanets5 = canvasPlanets5.getContext('2d');
+canvasPlanets5.height = window.innerHeight;
+canvasPlanets5.width = window.innerWidth;
+area_planets.push(ctxPlanets5);
+var canvasPlanets6 = document.querySelector('#arena_planets_6');
+var ctxPlanets6 = canvasPlanets6.getContext('2d');
+canvasPlanets6.height = window.innerHeight;
+canvasPlanets6.width = window.innerWidth;
+area_planets.push(ctxPlanets6);
+var canvasPlanets = document.querySelector('#arena_planets_1');
 var ctxPlanets = canvasPlanets.getContext('2d');
 canvasPlanets.height = window.innerHeight;
 canvasPlanets.width = window.innerWidth;
@@ -103,12 +134,12 @@ function paintStars(stars) {
     ctxBack.fill();
 }
 function pointSpaceObject(spaceObject) {
-    ctxPlanets.clearRect(spaceObject.x, spaceObject.y, spaceObject.type.naturalWidth, spaceObject.type.naturalHeight);
+    area_planets[spaceObject.num].clearRect(spaceObject.x, spaceObject.y, spaceObject.type.naturalWidth, spaceObject.type.naturalHeight);
     spaceObject.y += 1;
     if (spaceObject.y > canvas.height) {
         spaceObject.y = 0;
     }
-    ctxPlanets.drawImage(spaceObject.type, spaceObject.x, spaceObject.y);
+    area_planets[spaceObject.num].drawImage(spaceObject.type, spaceObject.x, spaceObject.y);
     window.requestAnimationFrame(function () {
         pointSpaceObject(spaceObject);
     });
@@ -152,7 +183,8 @@ var SpaceObjectsStream = Rx.Observable.from(spaceObjects)
     return {
         x: Math.random() * canvas.width,
         y: Math.random() * canvas.height,
-        type: spaceObjects[i]
+        type: spaceObjects[i],
+        num: i
     };
 });
 SpaceObjectsStream.subscribe(function (spaceObject) {
@@ -349,7 +381,6 @@ function startGame() {
             ctx.clearRect(enemy.x, enemy.y, enemy.type.naturalWidth, enemy.type.naturalHeight);
             ctx.drawImage(boom, mySpaceShip.x, mySpaceShip.y);
             enemy.boom = true;
-            //ctx.drawImage(boom, enemy.x, enemy.y);
             return;
         }
         if (mySpaceShip.isDead) {
