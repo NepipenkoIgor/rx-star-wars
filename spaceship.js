@@ -146,7 +146,7 @@ function paintStars(stars) {
     ctxBack.fill();
 }
 function pointSpaceObject(spaceObject) {
-    area_planets[spaceObject.num].clearRect(spaceObject.x, spaceObject.y, spaceObject.type.naturalWidth, spaceObject.type.naturalHeight);
+    area_planets[spaceObject.num].clearRect(spaceObject.x - 3, spaceObject.y - 3, spaceObject.type.naturalWidth + 3, spaceObject.type.naturalHeight + 3);
     spaceObject.y += 1;
     if (spaceObject.y > canvas.height) {
         spaceObject.y = 0;
@@ -157,7 +157,7 @@ function pointSpaceObject(spaceObject) {
     });
 }
 function drawShip(ship) {
-    ctx.clearRect(ship.oldX, ship.y, ship.type.naturalWidth, ship.type.naturalHeight);
+    ctx.clearRect(ship.oldX - 3, ship.y - 3, ship.type.naturalWidth + 3, ship.type.naturalHeight + 3);
     ctx.drawImage(spaceShip, ship.x, ship.y);
 }
 function drawScores(score) {
@@ -188,7 +188,7 @@ var StarsStream = Rx.Observable.range(1, STARS_NUM)
     });
 });
 StarsStream.subscribe(function (stars) {
-    paintStars(stars);
+    // paintStars(stars);
 });
 var SpaceObjectsStream = Rx.Observable.from(spaceObjects)
     .map(function (spaceObject, i) {
@@ -319,7 +319,7 @@ function startGame() {
             mySpaceShip: mySpaceShip
         };
     })
-        .sample(10)
+        .sample(40)
         .takeWhile(function (items) {
         var mySpaceShip = items.mySpaceShip;
         if (!mySpaceShip.isDead) {
@@ -328,7 +328,7 @@ function startGame() {
         console.log('Game Over');
         MySpaceShipSub.dispose();
         if (!mySpaceShip.collapseWithEnemy) {
-            ctx.clearRect(mySpaceShip.x, mySpaceShip.y, mySpaceShip.type.naturalWidth, mySpaceShip.type.naturalHeight);
+            ctx.clearRect(mySpaceShip.x - 3, mySpaceShip.y - 3, mySpaceShip.type.naturalWidth + 3, mySpaceShip.type.naturalHeight + 3);
             ctx.drawImage(boom, mySpaceShip.x, mySpaceShip.y);
         }
         items.myShots.forEach(function (shot) {
@@ -354,7 +354,7 @@ function startGame() {
         if (shot.stop) {
             return;
         }
-        ctx.clearRect(shot.x, shot.y, shot.type.naturalWidth, shot.type.naturalHeight);
+        ctx.clearRect(shot.x - 3, shot.y - 3, shot.type.naturalWidth + 3, shot.type.naturalHeight + 3);
         if (shot.y < 0) {
             return;
         }
@@ -363,7 +363,7 @@ function startGame() {
             if (!enemy.isDead && collision(shot, enemy)) {
                 ScoreSubject.onNext(SCORE_INC);
                 enemy.isDead = true;
-                ctx.clearRect(shot.x, shot.y, shot.type.naturalWidth, shot.type.naturalHeight);
+                ctx.clearRect(shot.x - 3, shot.y - 3, shot.type.naturalWidth + 3, shot.type.naturalHeight + 3);
                 return;
             }
         }
@@ -389,8 +389,8 @@ function startGame() {
             MySpaceShipSub.dispose();
             mySpaceShip.isDead = true;
             mySpaceShip.collapseWithEnemy = true;
-            ctx.clearRect(mySpaceShip.x, mySpaceShip.y, mySpaceShip.type.naturalWidth, mySpaceShip.type.naturalHeight);
-            ctx.clearRect(enemy.x, enemy.y, enemy.type.naturalWidth, enemy.type.naturalHeight);
+            ctx.clearRect(mySpaceShip.x - 3, mySpaceShip.y - 3, mySpaceShip.type.naturalWidth + 3, mySpaceShip.type.naturalHeight + 3);
+            ctx.clearRect(enemy.x - 3, enemy.y - 3, enemy.type.naturalWidth + 3, enemy.type.naturalHeight + 3);
             ctx.drawImage(boom, mySpaceShip.x, mySpaceShip.y);
             enemy.boom = true;
             return;
@@ -408,25 +408,25 @@ function startGame() {
         }
         enemy.shotsCount++;
         if (enemy.y > canvas.height) {
-            ctx.clearRect(enemy.x, enemy.y, enemy.type.naturalWidth, enemy.type.naturalHeight);
+            ctx.clearRect(enemy.x - 3, enemy.y - 3, enemy.type.naturalWidth + 3, enemy.type.naturalHeight + 3);
             enemy.isDead = true;
             return;
         }
         if (enemy.isDead && !enemy.boom) {
-            ctx.clearRect(enemy.x, enemy.y, enemy.type.naturalWidth, enemy.type.naturalHeight);
+            ctx.clearRect(enemy.x - 3, enemy.y - 3, enemy.type.naturalWidth + 3, enemy.type.naturalHeight + 3);
             enemy.boom = true;
             ctx.drawImage(boom, enemy.x, enemy.y);
             setTimeout(function () {
-                ctx.clearRect(enemy.x, enemy.y, boom.naturalWidth, boom.naturalHeight);
+                ctx.clearRect(enemy.x - 3, enemy.y - 3, boom.naturalWidth + 3, boom.naturalHeight + 3);
             }, 60);
         }
         if (!enemy.isDead) {
-            ctx.clearRect(enemy.x, enemy.y, enemy.type.naturalWidth, enemy.type.naturalHeight);
+            ctx.clearRect(enemy.x - 3, enemy.y - 3, enemy.type.naturalWidth + 3, enemy.type.naturalHeight + 3);
             enemy.y += ALIEN_SPEED;
             ctx.drawImage(enemy.type, enemy.x, enemy.y);
         }
         enemy.shots.forEach(function (shot) {
-            ctx.clearRect(shot.x, shot.y, shot.type.naturalWidth, shot.type.naturalHeight);
+            ctx.clearRect(shot.x - 3, shot.y - 3, shot.type.naturalWidth + 3, shot.type.naturalHeight + 3);
             if (collision(shot, mySpaceShip)) {
                 mySpaceShip.isDead = true;
                 return;
