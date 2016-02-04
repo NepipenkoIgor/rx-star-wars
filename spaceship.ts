@@ -6,6 +6,26 @@
 
 /// <reference path="./typings/tsd.d.ts" />
 
+interface Window {
+    requestAnimFrame:any;
+    webkitRequestAnimationFrame:any;
+    mozRequestAnimationFrame:any;
+    oRequestAnimationFrame:any;
+    // msRequestAnimationFrame already at WindowAnimationTiming interface
+}
+
+if (!window.requestAnimationFrame) {
+    window.requestAnimationFrame = (function () {
+        return window.webkitRequestAnimationFrame ||
+            window.mozRequestAnimationFrame ||
+            window.oRequestAnimationFrame ||
+            window.msRequestAnimationFrame ||
+            function (/* function FrameRequestCallback */ callback, /* DOMElement Element */ element) {
+                window.setTimeout(callback, 1000 / 60);
+            };
+    })();
+}
+
 type star={x:number,y:number,size:number,opacity?:number};
 type point={x:number,y:number,type?:any,isDead?:any,collapseWithEnemy?:boolean};
 
@@ -189,13 +209,13 @@ function pointSpaceObject(spaceObject) {
 }
 
 function drawShip(ship) {
-    ctx.clearRect(ship.oldX, ship.y, ship.type.naturalWidth, ship.type.naturalHeight);
-    ctx.drawImage(spaceShip, ship.x, ship.y);
+        ctx.clearRect(ship.oldX, ship.y, ship.type.naturalWidth, ship.type.naturalHeight);
+        ctx.drawImage(spaceShip, ship.x, ship.y);
 }
 
 
 function drawScores(score) {
-    ctx.clearRect(0, 0, 400, 100);
+    ctx.clearRect(0, 0, 200, 100);
     ctx.drawImage(alien_icon, 5, 5);
     ctx.fillStyle = '#ffffff';
     ctx.font = 'bold 26px sans-serif';
@@ -372,7 +392,7 @@ function startGame() {
                 mySpaceShip: mySpaceShip
             };
         })
-        .sample(5)
+        .sample(10)
         .takeWhile((items)=> {
             let {mySpaceShip}=items;
             if (!mySpaceShip.isDead) {

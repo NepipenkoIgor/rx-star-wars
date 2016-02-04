@@ -1,6 +1,18 @@
 /**
  * Created by igor on 1/29/16.
  */
+/// <reference path="./typings/tsd.d.ts" />
+if (!window.requestAnimationFrame) {
+    window.requestAnimationFrame = (function () {
+        return window.webkitRequestAnimationFrame ||
+            window.mozRequestAnimationFrame ||
+            window.oRequestAnimationFrame ||
+            window.msRequestAnimationFrame ||
+            function (/* function FrameRequestCallback */ callback, /* DOMElement Element */ element) {
+                window.setTimeout(callback, 1000 / 60);
+            };
+    })();
+}
 /** init canvas*/
 var area_planets = [];
 var canvasBack = document.querySelector('#arena_background');
@@ -149,7 +161,7 @@ function drawShip(ship) {
     ctx.drawImage(spaceShip, ship.x, ship.y);
 }
 function drawScores(score) {
-    ctx.clearRect(0, 0, 400, 100);
+    ctx.clearRect(0, 0, 200, 100);
     ctx.drawImage(alien_icon, 5, 5);
     ctx.fillStyle = '#ffffff';
     ctx.font = 'bold 26px sans-serif';
@@ -307,7 +319,7 @@ function startGame() {
             mySpaceShip: mySpaceShip
         };
     })
-        .sample(5)
+        .sample(10)
         .takeWhile(function (items) {
         var mySpaceShip = items.mySpaceShip;
         if (!mySpaceShip.isDead) {
