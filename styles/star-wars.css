@@ -4,4 +4,6 @@
 }
 canvas{
     vertical-align: top;
+    position: absolute;
+    top:0;
 }

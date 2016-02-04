@@ -2,25 +2,36 @@
  * Created by igor on 1/29/16.
  */
 
+/*улучшить !!!!*/
+
 /// <reference path="./typings/tsd.d.ts" />
 
 type star={x:number,y:number,size:number,opacity?:number};
-type point={x:number,y:number,type?:any};
+type point={x:number,y:number,type?:any,isDead?:any};
 
 /** init canvas*/
-let canvas:HTMLCanvasElement = document.createElement('canvas');
+let canvasBack:HTMLCanvasElement = <HTMLCanvasElement>document.querySelector('#arena_background');
+let ctxBack:CanvasRenderingContext2D = canvasBack.getContext('2d');
+canvasBack.height = window.innerHeight;
+canvasBack.width = window.innerWidth;
+
+
+let canvas:HTMLCanvasElement = <HTMLCanvasElement>document.querySelector('#arena');
 let ctx:CanvasRenderingContext2D = canvas.getContext('2d');
-document.body.innerHTML = '';
-document.body.appendChild(canvas);
 canvas.height = window.innerHeight;
 canvas.width = window.innerWidth;
 
+
 /** init ships and missels*/
+let boom = new Image();
+boom.src = "images/boom.png";
+
 let spaceShip = new Image();
 spaceShip.src = "images/my_ship.png";
 
 let my_missle = new Image();
 my_missle.src = "images/my_missle.png";
+
 
 let alien_icon = new Image();
 alien_icon.src = "images/alien_icon.png";
@@ -70,9 +81,9 @@ const STARS_NUM:number = 250;
 const PLAYER_POS:number = canvas.height - 100;
 const ENEMY_RESP:number = 1500;
 const ENEMY_SHOT_RESP:number = 750;
-const SHOTING_SPEED:number = 15;
+const SHOTING_SPEED:number = 10;
 const SCORE_INC:number = 10;
-
+const ALIEN_SPEED:number = 3;
 /** util game functions*/
 function isVisible(obj) {
     return obj.x > -obj.type.naturalWidth && obj.x < canvas.width + obj.type.naturalWidth &&
@@ -80,10 +91,10 @@ function isVisible(obj) {
 }
 
 function collision(target1, target2) {
-    return (target1.x + target1.type.naturalWidth / 2 > target2.x &&
-        target1.x + target1.type.naturalWidth / 2 < target2.x + target2.type.naturalWidth) &&
-        (target1.y - target1.type.naturalHeight / 2 > target2.y - target2.type.naturalHeight / 2 &&
-        target1.y - target1.type.naturalHeight / 2 < target2.y + target2.type.naturalHeight / 2)
+    return ((target1.x > target2.x ) &&
+        (target1.x < target2.x + target2.type.naturalWidth)) &&
+        ((target1.y > target2.y) &&
+        (target1.y + target1.type.naturalHeight ) < (target2.y + target2.type.naturalHeight) )
 }
 function gameOver(ship, enemies) {
     return enemies.some((enemy:any)=> {
@@ -96,91 +107,179 @@ function gameOver(ship, enemies) {
     })
 }
 function paintStars(stars:star[]) {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = '#01162f';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctxBack.fillStyle = '#01162f';
+    ctxBack.fillRect(0, 0, canvas.width, canvas.height);
+    ctxBack.fillStyle = '#ffffff';
+    ctxBack.beginPath();
     stars.forEach((star:star):void=> {
-        window.requestAnimationFrame(()=> {
-            ctx.fillStyle = '#ffffff';
-            ctx.beginPath();
-            ctx.arc(star.x, star.y, star.size / 2, 0, 2 * Math.PI);
-            ctx.closePath();
-            ctx.fill();
-        })
+        ctxBack.moveTo(star.x, star.y);
+        ctxBack.arc(star.x, star.y, star.size / 2, 0, 2 * Math.PI);
     })
+    ctxBack.stroke();
+    ctxBack.fill();
 }
 
-function drawShip(x, y) {
-    window.requestAnimationFrame(()=> {
-        ctx.drawImage(spaceShip, x, y);
-    })
+function drawShip(ship) {
+    ctx.clearRect(ship.oldX, ship.y, ship.type.naturalWidth, ship.type.naturalHeight);
+    ctx.drawImage(spaceShip, ship.x, ship.y);
 }
 
 
-function drawEnemies(enemies) {
-    enemies.forEach((enemy:any)=> {
-        enemy.y += 5;
-        if (!enemy.isDead) {
-            window.requestAnimationFrame(()=> {
-                ctx.drawImage(enemy.type, enemy.x, enemy.y);
-            })
+function drawEnemies(enemies, mySpaceShip) {
+    enemies.forEach((enemy:any, i)=> {
+        if (enemy.isDraw) {
+            return;
         }
-        enemy.shots.forEach((shot:any)=> {
-            shot.y += SHOTING_SPEED;
-            window.requestAnimationFrame(()=> {
-                ctx.drawImage(alien_missle, shot.x, shot.y);
-            })
+        enemy.isDraw = true;
+        drawEnemy(enemy, mySpaceShip)
+    })
+}
+function drawEnemy(enemy, mySpaceShip) {
+    if (enemy.stop) {
+        return;
+    }
+    if ((!enemy.shotsCount || enemy.shotsCount > 30) && !enemy.isDead) {
+        enemy.shotsCount = 0;
+        enemy.shots.push({
+            x: enemy.x + enemy.type.naturalWidth / 2 - alien_missle.naturalWidth / 2,
+            y: enemy.y + enemy.type.naturalHeight,
+            type: alien_missle
         })
+    }
+    enemy.shotsCount++;
+    if (enemy.y > canvas.height) {
+        ctx.clearRect(enemy.x, enemy.y, enemy.type.naturalWidth, enemy.type.naturalHeight)
+        enemy.isDead = true;
+        return;
+    }
+    if (enemy.isDead && !enemy.boom) {
+        ctx.clearRect(enemy.x, enemy.y, enemy.type.naturalWidth, enemy.type.naturalHeight)
+        enemy.boom = true;
+        ctx.drawImage(boom, enemy.x, enemy.y);
+        setTimeout(()=> {
+            ctx.clearRect(enemy.x, enemy.y, boom.naturalWidth, boom.naturalHeight)
+        }, 60)
+    }
+    if (!enemy.isDead) {
+        ctx.clearRect(enemy.x, enemy.y, enemy.type.naturalWidth, enemy.type.naturalHeight)
+        enemy.y += ALIEN_SPEED;
+        ctx.drawImage(enemy.type, enemy.x, enemy.y);
+    }
+    enemy.shots.forEach((shot:any)=> {
+        if (collision(shot, mySpaceShip)) {
+            mySpaceShip.isDead = true;
+        }
+        ctx.clearRect(shot.x, shot.y, shot.type.naturalWidth, shot.type.naturalHeight)
+        shot.y += SHOTING_SPEED;
+        ctx.drawImage(alien_missle, shot.x, shot.y);
+    });
+    window.requestAnimationFrame(()=> {
+        drawEnemy(enemy, mySpaceShip)
     })
 }
 
 function drawScores(score) {
-    window.requestAnimationFrame(()=> {
-        ctx.drawImage(alien_icon, 5, 5);
-        ctx.fillStyle = '#ffffff';
-        ctx.font = 'bold 26px sans-serif';
-        ctx.fillText(`Score: ${score}`, 40, 43)
+    ctx.clearRect(0, 0, 400, 100);
+    ctx.drawImage(alien_icon, 5, 5);
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 26px sans-serif';
+    let txt = `Score: ${score}`
+    ctx.fillText(txt, 40, 43)
+}
+/** stream of stars*/
+let StarsStream = Rx.Observable.range(1, STARS_NUM)
+    .map(():star => {
+        return {
+            x: Math.random() * canvas.width,
+            y: Math.random() * canvas.height,
+            size: Math.random() * 3 + 1
+        }
     })
-}
-function getRandomArbitrary(min, max) {
-    return Math.random() * (max - min) + min;
-}
+    .toArray()
+    .flatMap((stars)=> {
+        return Rx.Observable.timer(0, SPEED)
+            .map(()=> {
+                stars.forEach((star:star)=> {
+                    star.y > canvas.height ? star.y = 0 : star.y += 3;
+                });
+                return stars
+            })
+    })
 
+StarsStream.subscribe((stars)=> {
+    paintStars(stars);
+});
 function startGame() {
-    /** stream of stars*/
-    let StarsStream = Rx.Observable.range(1, STARS_NUM)
-        .map(():star => {
-            return {
-                x: Math.random() * canvas.width,
-                y: Math.random() * canvas.height,
-                size: Math.random() * 3 + 1
-            }
-        })
-        .toArray()
-        .flatMap((stars)=> {
-            return Rx.Observable.timer(0, SPEED)
-                .map(()=> {
-                    stars.forEach((star:star)=> {
-                        star.y > canvas.height ? star.y = 0 : star.y += 3;
-                        star.opacity = getRandomArbitrary(0, 1)
-                    });
-                    return stars
-                })
-        });
+
+    let myStartPosition = {x: canvas.width / 2, y: PLAYER_POS, type: spaceShip, oldX: canvas.width / 2}
+    //
+    //let Key = Rx.Observable.fromEvent(document, 'keydown')
+    //    .startWith(myStartPosition)
+    //let KeyLeft = Key.filter((e:any)=> {
+    //        return e.keyCode === 37
+    //    })
+    //    .map((e:any)=> {
+    //        myStartPosition.oldX = myStartPosition.x;
+    //        myStartPosition.x -= 10;
+    //        if (myStartPosition.x <= 0) {
+    //            myStartPosition.x = 5;
+    //        }
+    //        return myStartPosition;
+    //    })
+    //let KeyRight = Key.filter((e:any)=> {
+    //        return e.keyCode === 39
+    //    })
+    //    .map((e:any)=> {
+    //        myStartPosition.oldX = myStartPosition.x;
+    //        myStartPosition.x += 10;
+    //        if (myStartPosition.x + myStartPosition.type.naturalWidth >= canvas.width) {
+    //            myStartPosition.x = canvas.width - myStartPosition.type.naturalWidth - 5;
+    //        }
+    //        return myStartPosition;
+    //    })
+    //
+    //let MySpaceShip = Rx.Observable.merge(KeyLeft, KeyRight)
+
+    //
+    //let MyFire = Key
+    //    .filter((e:any)=> {
+    //        return e.keyCode === 32
+    //    })
+    //    .timestamp();
+    //
+    //
+    //let MyShots = Rx.Observable
+    //    .combineLatest(MySpaceShip, MyFire, (mySpaceShip, MyFire)=> {
+    //        return {timestamp: MyFire.timestamp, x: mySpaceShip.x}
+    //    })
+    //    .distinctUntilChanged((shot) => {
+    //        return shot.timestamp
+    //    })
+    //    .scan((shots, shot)=> {
+    //        shots.push({
+    //            x: shot.x + spaceShip.naturalWidth / 2 - my_missle.naturalWidth / 2,
+    //            y: PLAYER_POS - spaceShip.naturalHeight/ 2,
+    //            type: my_missle,
+    //        });
+    //        return shots.filter(isVisible);
+    //    }, [])
 
 
     /** stream fo MyShip*/
     let mouseMove = Rx.Observable.fromEvent(canvas, 'mousemove')
     let MySpaceShip = mouseMove
         .map((e:MouseEvent):point=> {
-            return {x: e.pageX - 32, y: PLAYER_POS, type: spaceShip}
+            myStartPosition.oldX = myStartPosition.x;
+            myStartPosition.x = e.pageX - spaceShip.naturalWidth / 2
+            return myStartPosition
         })
-        .startWith({x: canvas.width / 2, y: PLAYER_POS, type: spaceShip})
+        .startWith(myStartPosition)
 
 
     let MyFire = Rx.Observable
         .fromEvent(canvas, 'mousedown')
-        .timestamp();
+        .timestamp()
+        .debounce(60);
 
 
     let MyShots = Rx.Observable
@@ -193,13 +292,15 @@ function startGame() {
         .scan((shots, shot)=> {
             shots.push({
                 x: shot.x + spaceShip.naturalWidth / 2 - my_missle.naturalWidth / 2,
-                y: PLAYER_POS,
+                y: PLAYER_POS - spaceShip.naturalHeight / 2,
                 type: my_missle,
             });
-            return shots.filter((shot)=> {
-                return isVisible(shot);
-            });
+            return shots.filter(isVisible);
         }, []);
+
+    var MySpaceShipSub = MySpaceShip.subscribe((ship)=> {
+        drawShip(ship)
+    });
 
     /** stream fo Aliens*/
     let Enemies = Rx.Observable.timer(0, ENEMY_RESP)
@@ -213,24 +314,11 @@ function startGame() {
                 isDead: false,
                 type: alien
             };
-
-            Rx.Observable.timer(0, ENEMY_SHOT_RESP).subscribe(()=> {
-                if (!enemy.isDead) {
-                    enemy.shots.push({
-                        x: enemy.x + enemy.type.naturalWidth / 2 - alien_missle.naturalWidth / 2,
-                        y: enemy.y + enemy.type.naturalHeight,
-                        type: alien_missle
-                    })
-                }
-                enemy.shots.filter(isVisible);
-            });
             enemies.push(enemy);
             return enemies.filter((enemy:any)=> {
-                enemy.shots = enemy.shots.filter(isVisible);
-                return !(enemy.isDead || !isVisible(enemy)) || enemy.shots.length
+                return !(enemy.isDead || !isVisible(enemy)) || enemy.shots.length;
             });
         }, []);
-
 
     /** stream of scores*/
     let ScoreSubject = new Rx.Subject();
@@ -242,63 +330,84 @@ function startGame() {
         currentScore = score;
     });
 
-
     /** stream of full Game*/
-    let Game = Rx.Observable.combineLatest(StarsStream, MySpaceShip, MyShots, Enemies, (stars, mySpaceShip, myShots, enemies)=> {
+
+
+    let Game = Rx.Observable.combineLatest(MySpaceShip, MyShots, Enemies, (mySpaceShip, myShots, enemies)=> {
             return {
-                stars: stars,
-                mySpaceShip: mySpaceShip,
                 myShots: myShots,
                 enemies: enemies,
+                mySpaceShip: mySpaceShip
             };
         })
-        .sample(40)
+        .sample(20)
         .takeWhile((items)=> {
-            if (!gameOver(items.mySpaceShip, items.enemies)) {
+            if (!items.mySpaceShip.isDead) {
                 return true;
             }
-            setTimeout(startGame, 2000);
+            console.log('Game Over');
+            items.enemies.forEach((enemy:any)=> {
+                enemy.stop = true;
+            });
+            items.myShots.forEach((shot:any)=> {
+                shot.stop = true;
+            });
+            MySpaceShipSub.dispose();
+            ctx.clearRect(items.mySpaceShip.x,
+                items.mySpaceShip.y,
+                items.mySpaceShip.type.naturalWidth,
+                items.mySpaceShip.type.naturalHeight);
+            ctx.drawImage(boom, items.mySpaceShip.x, items.mySpaceShip.y)
         });
 
     Game.subscribe((items)=> {
-        // window.requestAnimationFrame(()=> {
-        let {stars, mySpaceShip, myShots, enemies}=items;
-        paintStars(stars);
-        drawShip(mySpaceShip.x, mySpaceShip.y);
+        let {mySpaceShip, myShots, enemies}=items;
+        drawEnemies(enemies, mySpaceShip);
         drawMyShots(myShots, enemies);
-        drawEnemies(enemies);
+        //drawEnemies(enemies);
         drawScores(currentScore)
-        //})
+        //drawShip(mySpaceShip);
     });
     function drawMyShots(shots, enemies) {
-        ctx.fillStyle = '#B8860B';
-        let shoot_indexses = [];
-        shots.forEach((shot:any, i:number)=> {
-            for (let enemy of enemies) {
-                if (!i) {
-                    return;
-                }
-                if (!enemy.isDead && collision(shot, enemy)) {
-                    ScoreSubject.onNext(SCORE_INC);
-                    enemy.isDead = true;
-                    enemy.x = enemy.y = -1000;
-                    shoot_indexses.push(i)
-                    break;
-                }
+        shots.forEach((shot:any, i)=> {
+            if (shot.isDraw) {
+                return;
             }
-            shot.y -= SHOTING_SPEED;
-            window.requestAnimationFrame(()=> {
-                ctx.drawImage(my_missle, shot.x, shot.y);
-            })
+            shot.isDraw = true;
+            drawShot(shot, enemies)
         });
-        shoot_indexses.forEach((index, i)=> {
-            shots.splice(index - i, 1)
+    }
+
+    function drawShot(shot, enemies) {
+        if (shot.stop) {
+            return;
+        }
+        ctx.clearRect(shot.x, shot.y, shot.type.naturalWidth, shot.type.naturalHeight);
+        if (shot.y < 0) {
+            return;
+        }
+
+        for (let enemy of enemies) {
+            if (!enemy.isDead && collision(shot, enemy)) {
+                ScoreSubject.onNext(SCORE_INC);
+                enemy.isDead = true;
+                ctx.clearRect(shot.x, shot.y, shot.type.naturalWidth, shot.type.naturalHeight);
+                return;
+            }
+        }
+
+        shot.y -= SHOTING_SPEED;
+        if (!shot.isDead) {
+            ctx.drawImage(shot.type, shot.x, shot.y);
+        }
+        window.requestAnimationFrame(()=> {
+            drawShot(shot, enemies)
         })
     }
 
     /**  init first value in shot's stream*/
-    var clickEvent = document.createEvent('MouseEvents');
-    clickEvent.initEvent('mousedown', true, true);
-    canvas.dispatchEvent(clickEvent);
+    //var clickEvent = document.createEvent('MouseEvents');
+    //clickEvent.initEvent('mousedown', true, true);
+    //canvas.dispatchEvent(clickEvent);
 }
 startGame()
