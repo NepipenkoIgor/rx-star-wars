@@ -6,6 +6,10 @@ var canvasBack = document.querySelector('#arena_background');
 var ctxBack = canvasBack.getContext('2d');
 canvasBack.height = window.innerHeight;
 canvasBack.width = window.innerWidth;
+var canvasPlanets = document.querySelector('#arena_planets');
+var ctxPlanets = canvasPlanets.getContext('2d');
+canvasPlanets.height = window.innerHeight;
+canvasPlanets.width = window.innerWidth;
 var canvas = document.querySelector('#arena');
 var ctx = canvas.getContext('2d');
 canvas.height = window.innerHeight;
@@ -47,6 +51,15 @@ spaceObjects.push(spaceObj2);
 var spaceObj3 = new Image();
 spaceObj3.src = "images/saturn.png";
 spaceObjects.push(spaceObj3);
+var spaceObj4 = new Image();
+spaceObj4.src = "images/meteor1.png";
+spaceObjects.push(spaceObj4);
+var spaceObj5 = new Image();
+spaceObj5.src = "images/meteor2.png";
+spaceObjects.push(spaceObj5);
+var spaceObj6 = new Image();
+spaceObj6.src = "images/meteor3.png";
+spaceObjects.push(spaceObj6);
 /** init consts*/
 var SPEED = 40;
 var STARS_NUM = 250;
@@ -88,6 +101,17 @@ function paintStars(stars) {
     });
     ctxBack.stroke();
     ctxBack.fill();
+}
+function pointSpaceObject(spaceObject) {
+    ctxPlanets.clearRect(spaceObject.x, spaceObject.y, spaceObject.type.naturalWidth, spaceObject.type.naturalHeight);
+    spaceObject.y += 1;
+    if (spaceObject.y > canvas.height) {
+        spaceObject.y = 0;
+    }
+    ctxPlanets.drawImage(spaceObject.type, spaceObject.x, spaceObject.y);
+    window.requestAnimationFrame(function () {
+        pointSpaceObject(spaceObject);
+    });
 }
 function drawShip(ship) {
     ctx.clearRect(ship.oldX, ship.y, ship.type.naturalWidth, ship.type.naturalHeight);
@@ -174,6 +198,17 @@ var StarsStream = Rx.Observable.range(1, STARS_NUM)
 });
 StarsStream.subscribe(function (stars) {
     paintStars(stars);
+});
+var SpaceObjectsStream = Rx.Observable.from(spaceObjects)
+    .map(function (spaceObject, i) {
+    return {
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        type: spaceObjects[i]
+    };
+});
+SpaceObjectsStream.subscribe(function (spaceObject) {
+    pointSpaceObject(spaceObject);
 });
 function startGame() {
     var myStartPosition = { x: canvas.width / 2, y: PLAYER_POS, type: spaceShip, oldX: canvas.width / 2 };

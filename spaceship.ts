@@ -15,6 +15,11 @@ let ctxBack:CanvasRenderingContext2D = canvasBack.getContext('2d');
 canvasBack.height = window.innerHeight;
 canvasBack.width = window.innerWidth;
 
+let canvasPlanets:HTMLCanvasElement = <HTMLCanvasElement>document.querySelector('#arena_planets');
+let ctxPlanets:CanvasRenderingContext2D = canvasPlanets.getContext('2d');
+canvasPlanets.height = window.innerHeight;
+canvasPlanets.width = window.innerWidth;
+
 
 let canvas:HTMLCanvasElement = <HTMLCanvasElement>document.querySelector('#arena');
 let ctx:CanvasRenderingContext2D = canvas.getContext('2d');
@@ -75,6 +80,18 @@ let spaceObj3 = new Image();
 spaceObj3.src = "images/saturn.png";
 spaceObjects.push(spaceObj3)
 
+let spaceObj4 = new Image();
+spaceObj4.src = "images/meteor1.png";
+spaceObjects.push(spaceObj4)
+
+let spaceObj5 = new Image();
+spaceObj5.src = "images/meteor2.png";
+spaceObjects.push(spaceObj5)
+
+let spaceObj6 = new Image();
+spaceObj6.src = "images/meteor3.png";
+spaceObjects.push(spaceObj6)
+
 /** init consts*/
 const SPEED:number = 40;
 const STARS_NUM:number = 250;
@@ -117,6 +134,17 @@ function paintStars(stars:star[]) {
     })
     ctxBack.stroke();
     ctxBack.fill();
+}
+function pointSpaceObject(spaceObject) {
+    ctxPlanets.clearRect(spaceObject.x, spaceObject.y, spaceObject.type.naturalWidth, spaceObject.type.naturalHeight);
+    spaceObject.y += 1;
+    if (spaceObject.y > canvas.height) {
+        spaceObject.y = 0;
+    }
+    ctxPlanets.drawImage(spaceObject.type, spaceObject.x, spaceObject.y);
+    window.requestAnimationFrame(()=> {
+        pointSpaceObject(spaceObject);
+    })
 }
 
 function drawShip(ship) {
@@ -204,11 +232,26 @@ let StarsStream = Rx.Observable.range(1, STARS_NUM)
                 });
                 return stars
             })
-    })
+    });
 
 StarsStream.subscribe((stars)=> {
     paintStars(stars);
 });
+
+let SpaceObjectsStream = Rx.Observable.from(spaceObjects)
+    .map((spaceObject,i):any => {
+        return {
+            x: Math.random() * canvas.width,
+            y: Math.random() * canvas.height,
+            type: spaceObjects[i]
+        }
+    })
+
+SpaceObjectsStream.subscribe((spaceObject)=>{
+    pointSpaceObject(spaceObject)
+})
+
+
 function startGame() {
 
     let myStartPosition = {x: canvas.width / 2, y: PLAYER_POS, type: spaceShip, oldX: canvas.width / 2}
