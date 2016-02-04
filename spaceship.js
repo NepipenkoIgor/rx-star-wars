@@ -341,15 +341,15 @@ function startGame() {
         });
     }
     function drawEnemy(enemy, mySpaceShip) {
-        if (collision(mySpaceShip, enemy)) {
+        if (collision(mySpaceShip, enemy) || collision(enemy, mySpaceShip)) {
             MySpaceShipSub.dispose();
             mySpaceShip.isDead = true;
             mySpaceShip.collapseWithEnemy = true;
             ctx.clearRect(mySpaceShip.x, mySpaceShip.y, mySpaceShip.type.naturalWidth, mySpaceShip.type.naturalHeight);
-            ctx.drawImage(boom, mySpaceShip.x, mySpaceShip.y);
             ctx.clearRect(enemy.x, enemy.y, enemy.type.naturalWidth, enemy.type.naturalHeight);
+            ctx.drawImage(boom, mySpaceShip.x, mySpaceShip.y);
             enemy.boom = true;
-            ctx.drawImage(boom, enemy.x, enemy.y);
+            //ctx.drawImage(boom, enemy.x, enemy.y);
             return;
         }
         if (mySpaceShip.isDead) {
@@ -383,10 +383,11 @@ function startGame() {
             ctx.drawImage(enemy.type, enemy.x, enemy.y);
         }
         enemy.shots.forEach(function (shot) {
+            ctx.clearRect(shot.x, shot.y, shot.type.naturalWidth, shot.type.naturalHeight);
             if (collision(shot, mySpaceShip)) {
                 mySpaceShip.isDead = true;
+                return;
             }
-            ctx.clearRect(shot.x, shot.y, shot.type.naturalWidth, shot.type.naturalHeight);
             shot.y += SHOTING_SPEED;
             ctx.drawImage(alien_missle, shot.x, shot.y);
         });
