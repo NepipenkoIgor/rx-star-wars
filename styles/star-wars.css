@@ -7,3 +7,8 @@ canvas{
     position: absolute;
     top:0;
 }
+#play_area{
+    margin: auto;
+    height: 720px;
+    width: 1024px;
+}

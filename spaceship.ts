@@ -11,7 +11,6 @@ interface Window {
     webkitRequestAnimationFrame:any;
     mozRequestAnimationFrame:any;
     oRequestAnimationFrame:any;
-    // msRequestAnimationFrame already at WindowAnimationTiming interface
 }
 
 if (!window.requestAnimationFrame) {
@@ -20,7 +19,7 @@ if (!window.requestAnimationFrame) {
             window.mozRequestAnimationFrame ||
             window.oRequestAnimationFrame ||
             window.msRequestAnimationFrame ||
-            function (/* function FrameRequestCallback */ callback, /* DOMElement Element */ element) {
+            function (callback) {
                 window.setTimeout(callback, 1000 / 60);
             };
     })();
@@ -34,58 +33,44 @@ let area_planets = [];
 
 let canvasBack:HTMLCanvasElement = <HTMLCanvasElement>document.querySelector('#arena_background');
 let ctxBack:CanvasRenderingContext2D = canvasBack.getContext('2d');
-canvasBack.height = window.innerHeight;
-canvasBack.width = window.innerWidth;
 
 
 let canvasPlanets1:HTMLCanvasElement = <HTMLCanvasElement>document.querySelector('#arena_planets_1');
 let ctxPlanets1:CanvasRenderingContext2D = canvasPlanets1.getContext('2d');
-canvasPlanets1.height = window.innerHeight;
-canvasPlanets1.width = window.innerWidth;
 area_planets.push(ctxPlanets1)
 
 let canvasPlanets2:HTMLCanvasElement = <HTMLCanvasElement>document.querySelector('#arena_planets_2');
 let ctxPlanets2:CanvasRenderingContext2D = canvasPlanets2.getContext('2d');
-canvasPlanets2.height = window.innerHeight;
-canvasPlanets2.width = window.innerWidth;
 area_planets.push(ctxPlanets2)
 
 let canvasPlanets3:HTMLCanvasElement = <HTMLCanvasElement>document.querySelector('#arena_planets_3');
 let ctxPlanets3:CanvasRenderingContext2D = canvasPlanets3.getContext('2d');
-canvasPlanets3.height = window.innerHeight;
-canvasPlanets3.width = window.innerWidth;
 area_planets.push(ctxPlanets3)
 
 let canvasPlanets4:HTMLCanvasElement = <HTMLCanvasElement>document.querySelector('#arena_planets_4');
 let ctxPlanets4:CanvasRenderingContext2D = canvasPlanets4.getContext('2d');
-canvasPlanets4.height = window.innerHeight;
-canvasPlanets4.width = window.innerWidth;
 area_planets.push(ctxPlanets4)
 
 let canvasPlanets5:HTMLCanvasElement = <HTMLCanvasElement>document.querySelector('#arena_planets_5');
 let ctxPlanets5:CanvasRenderingContext2D = canvasPlanets5.getContext('2d');
-canvasPlanets5.height = window.innerHeight;
-canvasPlanets5.width = window.innerWidth;
 area_planets.push(ctxPlanets5)
 
 let canvasPlanets6:HTMLCanvasElement = <HTMLCanvasElement>document.querySelector('#arena_planets_6');
 let ctxPlanets6:CanvasRenderingContext2D = canvasPlanets6.getContext('2d');
-canvasPlanets6.height = window.innerHeight;
-canvasPlanets6.width = window.innerWidth;
-area_planets.push(ctxPlanets6)
+area_planets.push(ctxPlanets6);
 
-let canvasPlanets:HTMLCanvasElement = <HTMLCanvasElement>document.querySelector('#arena_planets_1');
-let ctxPlanets:CanvasRenderingContext2D = canvasPlanets.getContext('2d');
-canvasPlanets.height = window.innerHeight;
-canvasPlanets.width = window.innerWidth;
 
 
 let canvas:HTMLCanvasElement = <HTMLCanvasElement>document.querySelector('#arena');
 let ctx:CanvasRenderingContext2D = canvas.getContext('2d');
-canvas.height = window.innerHeight;
-canvas.width = window.innerWidth;
 
 
+let scoreCanvas:HTMLCanvasElement = <HTMLCanvasElement>document.querySelector('#scores');
+let ctxScore:CanvasRenderingContext2D = scoreCanvas.getContext('2d');
+
+
+let positionOfMonitor=document.querySelector('#play_area').getBoundingClientRect().left
+console.log(positionOfMonitor)
 /** init ships and missels*/
 let boom = new Image();
 boom.src = "images/boom.png";
@@ -167,23 +152,21 @@ function isVisible(obj) {
 }
 
 function collision(target1, target2) {
-
-
     return ((target1.x + target1.type.naturalWidth >= target2.x ) &&
         (target1.x <= target2.x + target2.type.naturalWidth)) &&
         ((target1.y > target2.y) &&
         target1.y < (target2.y + target2.type.naturalHeight / 2))
 }
-function gameOver(ship, enemies) {
-    return enemies.some((enemy:any)=> {
-        if (collision(ship, enemy)) {
-            return true;
-        }
-        return enemy.shots.some((shot)=> {
-            return collision(shot, ship)
-        })
-    })
-}
+//function gameOver(ship, enemies) {
+//    return enemies.some((enemy:any)=> {
+//        if (collision(ship, enemy)) {
+//            return true;
+//        }
+//        return enemy.shots.some((shot)=> {
+//            return collision(shot, ship)
+//        })
+//    })
+//}
 function paintStars(stars:star[]) {
     ctxBack.fillStyle = '#01162f';
     ctxBack.fillRect(0, 0, canvas.width, canvas.height);
@@ -215,12 +198,11 @@ function drawShip(ship) {
 
 
 function drawScores(score) {
-    ctx.clearRect(0, 0, 200, 100);
-    ctx.drawImage(alien_icon, 5, 5);
-    ctx.fillStyle = '#ffffff';
-    ctx.font = 'bold 26px sans-serif';
-    let txt = `Score: ${score}`
-    ctx.fillText(txt, 40, 43)
+    ctxScore.clearRect(0, 0, 200, 100);
+    ctxScore.drawImage(alien_icon, 5, 5);
+    ctxScore.fillStyle = '#ffffff';
+    ctxScore.font = 'bold 26px sans-serif';
+    ctxScore.fillText( `Score: ${score}`, 40, 43)
 }
 /** stream of stars*/
 let StarsStream = Rx.Observable.range(1, STARS_NUM)
@@ -243,7 +225,7 @@ let StarsStream = Rx.Observable.range(1, STARS_NUM)
     });
 
 StarsStream.subscribe((stars)=> {
-   // paintStars(stars);
+    paintStars(stars);
 });
 
 let SpaceObjectsStream = Rx.Observable.from(spaceObjects)
@@ -322,7 +304,7 @@ function startGame() {
     let MySpaceShip = mouseMove
         .map((e:MouseEvent):point=> {
             myStartPosition.oldX = myStartPosition.x;
-            myStartPosition.x = e.pageX - spaceShip.naturalWidth / 2
+            myStartPosition.x = e.pageX-positionOfMonitor - spaceShip.naturalWidth / 2
             return myStartPosition
         })
         .startWith(myStartPosition)
