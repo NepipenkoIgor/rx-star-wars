@@ -183,7 +183,7 @@ function pointSpaceObject(spaceObject) {
     area_planets[spaceObject.num].clearRect(spaceObject.x-3, spaceObject.y-3, spaceObject.type.naturalWidth+3, spaceObject.type.naturalHeight+3);
     spaceObject.y += 1;
     if (spaceObject.y > canvas.height) {
-        spaceObject.y = 0;
+        spaceObject.y = -spaceObject.type.naturalHeight;
     }
     area_planets[spaceObject.num].drawImage(spaceObject.type, spaceObject.x, spaceObject.y);
     window.requestAnimationFrame(()=> {
