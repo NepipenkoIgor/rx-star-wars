@@ -93,7 +93,7 @@ var STARS_NUM = 250;
 var PLAYER_POS = canvas.height - 100;
 var ENEMY_RESP = 1500;
 var ENEMY_SHOT_RESP = 750;
-var SHOTING_SPEED = 10;
+var SHOTING_SPEED = 7;
 var SCORE_INC = 10;
 var ALIEN_SPEED = 3;
 /** util game functions*/

@@ -142,7 +142,7 @@ const STARS_NUM:number = 250;
 const PLAYER_POS:number = canvas.height - 100;
 const ENEMY_RESP:number = 1500;
 const ENEMY_SHOT_RESP:number = 750;
-const SHOTING_SPEED:number = 10;
+const SHOTING_SPEED:number = 7;
 const SCORE_INC:number = 10;
 const ALIEN_SPEED:number = 3;
 /** util game functions*/
